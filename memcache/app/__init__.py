@@ -12,9 +12,8 @@ CONFIG_FILE = 'config.json'
 webapp = Flask(__name__)
 webapp.config.from_file(CONFIG_FILE, load=json.load)
 
-# db = SQLAlchemy()
-# db.init_app(webapp)
-db = None # Temp just for some quick local testing
+db = SQLAlchemy()
+db.init_app(webapp)
 
 # TODO: Handle getting initial config from database
 cache = MemCache()

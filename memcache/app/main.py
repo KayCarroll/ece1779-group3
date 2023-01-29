@@ -2,7 +2,7 @@ import logging
 
 from flask import json, render_template, request
 from app import webapp, db, cache
-# from app.models import CacheConfig, CacheStats
+from app.models import CacheConfig, CacheStats
 
 LOG_FORMAT = '%(asctime)s - %(name)s - [%(levelname)s] - %(message)s'
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, handlers=[logging.StreamHandler()])
@@ -17,10 +17,9 @@ def store_memcache_statistics():
     with webapp.app_context():
         # TODO: Do some checks/tests to make sure that using the db object in this function while
         # its is being run in a separate thread by the scheduler won't be an issue.
-        print(cache.get_statistics()) # Temp for testing locally only
-        # stats = CacheStats(**cache.get_statistics())
-        # db.session.add(stats)
-        # db.session.commit()
+        stats = CacheStats(**cache.get_statistics())
+        db.session.add(stats)
+        db.session.commit()
 
 
 @webapp.route('/')
@@ -79,11 +78,11 @@ def invalidate_key():
     return response
 
 
-# @webapp.route('/refreshConfiguration', methods=['POST'])
-# def refresh_configuration():
-#     # TODO: Consider wrapping in a try-except block and defining an error response
-#     config = CacheConfig.query.order_by('updated desc').first_or_404()
-#     cache.update_config(config.replacement_policy, config.capacity)
-#     response = webapp.response_class(response=json.dumps('OK'), status=200,
-#                                      mimetype='application/json')
-#     return response
+@webapp.route('/refreshConfiguration', methods=['POST'])
+def refresh_configuration():
+    # TODO: Consider wrapping in a try-except block and defining an error response
+    config = CacheConfig.query.order_by('updated desc').first_or_404()
+    cache.update_config(config.replacement_policy, config.capacity)
+    response = webapp.response_class(response=json.dumps('OK'), status=200,
+                                     mimetype='application/json')
+    return response
