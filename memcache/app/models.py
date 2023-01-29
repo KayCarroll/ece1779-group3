@@ -16,6 +16,6 @@ class CacheStats(db.Model):
     # config_id = db.Column(db.Integer, db.ForeignKey('CacheConfig.id')) # Might not really need this, consider removing/changing
     cache_count = db.Column(db.Integer)
     cache_size = db.Column(db.Float)
-    miss_rate = db.Column(db.Integer)
-    hit_rate = db.Column(db.Integer)
+    miss_rate = db.Column(db.Float)
+    hit_rate = db.Column(db.Float)
     requests_served = db.Column(db.Integer)

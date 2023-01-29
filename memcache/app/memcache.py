@@ -5,7 +5,6 @@ import time
 logger = logging.getLogger(__name__)
 
 # TODO: Add in docstrings and logging in the classes below
-# TODO: Update the requests_served for each request served
 
 # NOTE: Currently the assumption is that only the size of the values being stored in the cache 
 # count towards the total cache memory capacity. The memory used by the keys and general python 
@@ -31,7 +30,6 @@ class MemCache:
         self.capacity = capacity
         self.replacement_policy = replacement_policy
         self.cache = {}
-        self.cache_hits = 0
         self.cache_misses = 0
         self.current_cache_size = 0
         self.requests_served = 0
@@ -55,11 +53,13 @@ class MemCache:
 
     def get_value(self, key):
         if key in self.cache:
-            self.cache_hits += 1
-            return self.cache[key].value
+            value = self.cache[key].value
         else:
             self.cache_misses += 1
-            return None
+            value = None
+
+        self.requests_served += 1
+        return value
 
     def put_item(self, key, value):
         new_item = CacheItem(key, value)
@@ -95,6 +95,7 @@ class MemCache:
                 self._remove_cache_items(capacity)
 
     def get_statistics(self):
+        miss_rate = round(self.cache_misses / self.requests_served, 2)
+        hit_rate = 1 - miss_rate
         return {'cache_count': len(self.cache), 'cache_size': self.current_cache_size,
-                'hit_rate': self.cache_hits, 'miss_rate': self.cache_misses,
-                'requests_served': self.requests_served}
+                'hit_rate': hit_rate, 'miss_rate': miss_rate, 'requests_served': self.requests_served}

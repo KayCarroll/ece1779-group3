@@ -13,7 +13,7 @@ CREATE TABLE cache_stats (
   created_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   cache_count INTEGER NOT NULL,
   cache_size FLOAT NOT NULL,
-  miss_rate INTEGER NOT NULL,
-  hit_rate INTEGER NOT NULL,
+  miss_rate FLOAT NOT NULL,
+  hit_rate FLOAT NOT NULL,
   requests_served INTEGER NOT NULL
 );
