@@ -26,7 +26,7 @@ def upload_image():
     file = request.files['my_image']
     file.save("saved_images/" + file_name + ".jpg")
     print(file)
-    return 'File uploaded successfully'
+    return render_template('message.html', user_message = "Your image has been uploaded successfully", return_addr='/upload_image')
 
 @webapp.route('/show_image')
 def render_show_image():
@@ -50,7 +50,7 @@ def show_image():
     img_file_path = "saved_images/" + file_name + ".jpg"
     path = Path(img_file_path)
     if not path.is_file():
-        return render_template('error.html', error_message = "The key you specified does not exist in the database")
+        return render_template('message.html', user_message = "The key you specified does not exist in the database", return_addr='/show_image')
     print (img_file_path)
     im = Image.open(img_file_path)
     data = io.BytesIO()
