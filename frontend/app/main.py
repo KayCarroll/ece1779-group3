@@ -3,6 +3,7 @@ from flask import render_template, url_for, request
 from app import webapp, memcache
 from flask import json
 from PIL import Image
+from pathlib import Path
 import io
 import base64
 
@@ -47,6 +48,9 @@ def show_image():
     # TODO: check if key exist in mem cache
     # Placeholder: reading directly from file system all the time
     img_file_path = "saved_images/" + file_name + ".jpg"
+    path = Path(img_file_path)
+    if not path.is_file():
+        return render_template('error.html', error_message = "The key you specified does not exist in the database")
     print (img_file_path)
     im = Image.open(img_file_path)
     data = io.BytesIO()
