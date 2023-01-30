@@ -3,6 +3,8 @@ from flask import render_template, url_for, request
 from app import webapp, memcache
 from flask import json
 from PIL import Image
+import io
+import base64
 
 
 @webapp.route('/')
@@ -28,12 +30,29 @@ def upload_image():
 @webapp.route('/show_image')
 def render_show_image():
     img_file_path = 'saved_images/dsfsdaf.jpg'
-    return render_template('show_image.html', user_image = img_file_path)
+    im = Image.open(img_file_path)
+    data = io.BytesIO()
+    im.save(data, "JPEG")
+    encoded_img_data = base64.b64encode(data.getvalue())
+    return render_template('show_image.html')
 
 @webapp.route('/show_image', methods=['POST'])
 def show_image():
-    img_file_path = 'saved_images/dsfsdaf.jpg'
-    return render_template('show_image.html', user_image = img_file_path)
+    # 1. check against database to see if key exist, if not, warn user
+    # 2. Check memcache to see if it is in memcache
+    # 3. if it does exist, take the data from mem cache, and serve the website
+    # 4. if it doesn't exist, take the location provided by database, and load the file
+    file_name = request.form.get("text")
+    # TODO: check if key exist in database
+    # TODO: check if key exist in mem cache
+    # Placeholder: reading directly from file system all the time
+    img_file_path = "saved_images/" + file_name + ".jpg"
+    print (img_file_path)
+    im = Image.open(img_file_path)
+    data = io.BytesIO()
+    im.save(data, "JPEG")
+    encoded_img_data = base64.b64encode(data.getvalue())
+    return render_template('show_image.html', img_data = encoded_img_data.decode('utf-8'))
 
 @webapp.route('/available_keys')
 def available_keys():
