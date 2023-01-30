@@ -30,11 +30,11 @@ def upload_image():
 
 @webapp.route('/show_image')
 def render_show_image():
-    img_file_path = 'saved_images/dsfsdaf.jpg'
-    im = Image.open(img_file_path)
-    data = io.BytesIO()
-    im.save(data, "JPEG")
-    encoded_img_data = base64.b64encode(data.getvalue())
+    # img_file_path = 'saved_images/dsfsdaf.jpg'
+    # im = Image.open(img_file_path)
+    # data = io.BytesIO()
+    # im.save(data, "JPEG")
+    # encoded_img_data = base64.b64encode(data.getvalue())
     return render_template('show_image.html')
 
 @webapp.route('/show_image', methods=['POST'])
@@ -60,15 +60,38 @@ def show_image():
 
 @webapp.route('/available_keys')
 def available_keys():
-    return render_template("main.html")
+    # TODO: Contact database to get a list of keys
+    placeholder_list = ['item1', 'item2', 'item3']
+    return render_template("show_list.html", list_title='All Available Keys (PLACEHOLDER ONLY)', input_list=placeholder_list, return_addr='/')
 
 @webapp.route('/config')
 def config():
-    return render_template("main.html")
+    return render_template("config.html")
+
+@webapp.route('/config', methods=['POST'])
+def process_config():
+    print(request.form)
+    if 'display' in request.form:
+        # TODO: contact mem cache to get the list of keys
+        placeholder_list = ['item1', 'item2', 'item3']
+        return render_template("show_list.html", list_title='All Keys In MemCache (PLACEHOLDER ONLY)', input_list=placeholder_list, return_addr='/config')
+    elif 'clear' in request.form:
+        # TODO: send the clear message to mem cache
+        return render_template("config.html", message = "Cache Cleared!")
+    cache_size = request.form.get("cache_size")
+    cache_size_float = float(cache_size)
+    print(cache_size)
+    # the option_selected has 2 possible values (both string): RR and LRU
+    option_selected = request.form.get("policyRadios")
+    print(option_selected)
+    # TODO: write the options to database and call refreshConfiguration() for memcache
+    return render_template("config.html")
 
 @webapp.route('/statistics')
 def statistics():
-    return render_template("main.html")
+    # TODO: Contact Database to read statistics
+    placeholder_list = ["Number of Items in Cache: 43", "Cache Size Used: 102.5MB", "Number of Request Served: 72", "Hit Rate: 50%", "Miss Rate: 50%"]
+    return render_template("show_list.html", list_title='MemCache Statistics (PLACEHOLDER ONLY)', input_list=placeholder_list, return_addr='/')
 
 @webapp.route('/navbar')
 def global_navbar():
