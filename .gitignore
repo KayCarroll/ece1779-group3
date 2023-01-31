@@ -130,6 +130,9 @@ dmypy.json
 
 # user uploaded images
 saved_images/
+
+# misc
+.DS_Store
 frontend/app/.vs/app/FileContentIndex/36937e8b-3723-430d-97a1-b156b4883844.vsidx
 frontend/app/.vs/app/FileContentIndex/4bda9460-f6ee-4cac-bc51-6cf03a2c7186.vsidx
 frontend/app/.vs/app/FileContentIndex/8252d268-5cc4-4f2f-8570-8e63b8559e25.vsidx

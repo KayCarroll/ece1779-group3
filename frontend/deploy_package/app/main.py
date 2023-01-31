@@ -23,7 +23,7 @@ def upload_image():
     # TODO: Check the key is not duplicate, if it is, replace the old file
     # TODO: add the key to the list of known keys in the database
     file = request.files['my_image']
-    file_path = "saved_images/" + file_name + ".jpg"
+    file_path = "saved_images/" + file_name
     isExist = os.path.exists("saved_images")
     if not isExist:
         os.makedirs("saved_images")
@@ -50,7 +50,7 @@ def show_image():
     # TODO: check if key exist in database
     # TODO: check if key exist in mem cache
     # Placeholder: reading directly from file system all the time
-    img_file_path = "saved_images/" + file_name + ".jpg"
+    img_file_path = "saved_images/" + file_name
     path = Path(img_file_path)
     if not path.is_file():
         return render_template('message.html', user_message = "The key you specified does not exist in the database", return_addr='/show_image')
