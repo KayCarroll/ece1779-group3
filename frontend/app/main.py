@@ -43,8 +43,7 @@ def upload_image():
     db_con =  get_db()
     cursor= db_con.cursor()
     #Check the key is not duplicate, if it is, replace the old file
-    cursor.execute(
-    "SELECT image_key FROM image_key_table1 WHERE image_key = %s GROUP BY image_key",(file_name,))
+    cursor.execute("SELECT image_key FROM image_key_table1 WHERE image_key = %s GROUP BY image_key",(file_name,))
     exist = cursor.fetchone()
     # add the key to the list of known keys in the database
     if exist is None:
@@ -88,9 +87,12 @@ def show_image():
 
 @webapp.route('/available_keys')
 def available_keys():
-    # TODO: Contact database to get a list of keys
-    placeholder_list = ['item1', 'item2', 'item3']
-    return render_template("show_list.html", list_title='All Available Keys (PLACEHOLDER ONLY)', input_list=placeholder_list, return_addr='/')
+    # Contact database to get a list of keys
+    db_con =  get_db()
+    cursor= db_con.cursor()
+    cursor.execute("SELECT * FROM image_key_table1")
+    placeholder_list = [row[0] for row in cursor.fetchall()]
+    return render_template("show_list.html",list_title='All Available Keys', input_list=placeholder_list, return_addr='/')
 
 @webapp.route('/config')
 def config():
