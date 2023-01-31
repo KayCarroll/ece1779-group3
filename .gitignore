@@ -130,3 +130,6 @@ dmypy.json
 
 # user uploaded images
 saved_images/
+
+# misc
+.DS_Store
