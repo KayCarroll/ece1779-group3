@@ -92,7 +92,17 @@ def available_keys():
     cursor= db_con.cursor()
     cursor.execute("SELECT * FROM image_key_table1")
     placeholder_list = [row[0] for row in cursor.fetchall()]
-    return render_template("show_list.html",list_title='All Available Keys', input_list=placeholder_list, return_addr='/')
+    return render_template("show_keylist.html",list_title='All Available Keys', input_list=placeholder_list, return_addr='/')
+
+@webapp.route('/available_keys',methods=['POST'])
+def key_deletion():
+    db_con =  get_db()
+    cursor= db_con.cursor()
+    cursor.execute('SET SQL_SAFE_UPDATES = 0;')
+    cursor.execute("DELETE FROM image_key_table1")
+    cursor.execute('SET SQL_SAFE_UPDATES = 1;')
+    db_con.commit()
+    return available_keys()
 
 @webapp.route('/config')
 def config():
