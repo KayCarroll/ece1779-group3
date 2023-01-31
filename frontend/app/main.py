@@ -1,12 +1,32 @@
 
-from flask import render_template, url_for, request
+from flask import render_template, url_for, request, g
 from app import webapp, memcache
 from flask import json
 from PIL import Image
 from pathlib import Path
 import io
 import base64
+import mysql.connector
+from app.config import db_config
 
+def connect_to_database():
+    return mysql.connector.connect(user=db_config['user'],
+                                   password=db_config['password'],
+                                   host=db_config['host'],
+                                   database=db_config['database'])
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = connect_to_database()
+    return db
+
+
+@webapp.teardown_appcontext
+def teardown_db(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
 
 @webapp.route('/')
 def main():
@@ -20,8 +40,16 @@ def render_upload_image():
 def upload_image():
     file_name = request.form.get("text")
     print("received file name: " + file_name)
-    # TODO: Check the key is not duplicate, if it is, replace the old file
-    # TODO: add the key to the list of known keys in the database
+    db_con =  get_db()
+    cursor= db_con.cursor()
+    #Check the key is not duplicate, if it is, replace the old file
+    cursor.execute(
+    "SELECT image_key FROM image_key_table1 WHERE image_key = %s GROUP BY image_key",(file_name,))
+    exist = cursor.fetchone()
+    # add the key to the list of known keys in the database
+    if exist is None:
+        cursor.execute("INSERT INTO image_key_table1 VALUES(%s)",(file_name,))
+        db_con.commit()
     print(request.files)
     file = request.files['my_image']
     file.save("saved_images/" + file_name + ".jpg")
