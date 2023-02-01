@@ -50,6 +50,11 @@ def upload_image():
         cursor.execute("INSERT INTO image_key_table1 VALUES(%s)",(file_name,))
         db_con.commit()
     file = request.files['my_image']
+    print (file)
+    print(file.content_type)
+    print(file.filename)
+    print(file.mimetype)
+    print(file.name)
     file_path = "saved_images/" + file_name
     isExist = os.path.exists("saved_images")
     if not isExist:
@@ -81,12 +86,11 @@ def show_image():
     path = Path(img_file_path)
     if not path.is_file():
         return render_template('message.html', user_message = "The key you specified does not exist in the database", return_addr='/show_image')
-    print (img_file_path)
     im = Image.open(img_file_path)
     data = io.BytesIO()
-    im.save(data, "JPEG")
+    im.save(data, im.format)
     encoded_img_data = base64.b64encode(data.getvalue())
-    return render_template('show_image.html', img_data = encoded_img_data.decode('utf-8'))
+    return render_template('show_image.html', format=im.format, img_data = encoded_img_data.decode('utf-8'))
 
 @webapp.route('/available_keys')
 def available_keys():

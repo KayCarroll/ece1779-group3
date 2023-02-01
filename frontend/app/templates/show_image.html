@@ -17,7 +17,7 @@
     <button type="submit" class="btn btn-primary">Submit</button>
     </form>
 
-    <img id="picture" class="img-fluid" src="data:image/jpeg;base64,{{ img_data }}">
+    <img id="picture" class="img-fluid" src="data:image/{{ format }};base64,{{ img_data }}">
 
     <script>
     $(function(){
