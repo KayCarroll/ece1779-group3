@@ -2,7 +2,7 @@
 from flask import render_template, url_for, request, g
 from app import webapp, memcache
 from flask import json
-from PIL import Image
+from PIL import Image, ImageSequence
 from pathlib import Path
 import io
 import base64
@@ -88,7 +88,13 @@ def show_image():
         return render_template('message.html', user_message = "The key you specified does not exist in the database", return_addr='/show_image')
     im = Image.open(img_file_path)
     data = io.BytesIO()
-    im.save(data, im.format)
+    if im.format is "GIF":
+        ims = ImageSequence.all_frames(im)
+        for img in ims:
+            ims[0].save(data, format=im.format, save_all=True, append_images=ims[1:])
+    else:
+        im.save(data, im.format)
+    im.save("test.gif")
     encoded_img_data = base64.b64encode(data.getvalue())
     return render_template('show_image.html', format=im.format, img_data = encoded_img_data.decode('utf-8'))
 
