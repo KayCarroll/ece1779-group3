@@ -95,7 +95,12 @@ class MemCache:
                 self._remove_cache_items(capacity)
 
     def get_statistics(self):
-        miss_rate = round(self.cache_misses / self.requests_served, 2)
-        hit_rate = 1 - miss_rate
+        if self.requests_served:
+            miss_rate = round(self.cache_misses / self.requests_served, 2)
+            hit_rate = 1 - miss_rate
+        else:
+            miss_rate = 0
+            hit_rate = 0
+
         return {'cache_count': len(self.cache), 'cache_size': self.current_cache_size,
                 'hit_rate': hit_rate, 'miss_rate': miss_rate, 'requests_served': self.requests_served}

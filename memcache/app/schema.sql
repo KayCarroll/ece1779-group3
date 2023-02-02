@@ -4,7 +4,7 @@ DROP TABLE IF EXISTS cache_stats;
 CREATE TABLE cache_config (
   id INTEGER PRIMARY KEY AUTO_INCREMENT,
   created_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  capacity INTEGER UNIQUE NOT NULL,
+  capacity INTEGER NOT NULL,
   replacement_policy TEXT NOT NULL
 );
 

@@ -13,7 +13,6 @@ class CacheConfig(db.Model):
 class CacheStats(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     created_time = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    # config_id = db.Column(db.Integer, db.ForeignKey('CacheConfig.id')) # Might not really need this, consider removing/changing
     cache_count = db.Column(db.Integer)
     cache_size = db.Column(db.Float)
     miss_rate = db.Column(db.Float)
