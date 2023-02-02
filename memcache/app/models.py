@@ -1,12 +1,11 @@
 import datetime
 from app import db
 
-# TODO: Revisit the column types and correct them as needed
 
 class CacheConfig(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     created_time = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    capacity = db.Column(db.Integer)
+    capacity = db.Column(db.Float)
     replacement_policy = db.Column(db.String)
 
 
