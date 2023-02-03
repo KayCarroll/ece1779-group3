@@ -10,6 +10,8 @@ import mysql.connector
 from app.config import db_config
 import os
 
+import requests
+
 def connect_to_database():
     return mysql.connector.connect(user=db_config['user'],
                                    password=db_config['password'],
@@ -61,7 +63,15 @@ def upload_image():
         os.makedirs("saved_images")
         print("Saved images directory is created!")
     file.save(file_path)
-    return render_template('message.html', user_message = "Your image has been uploaded successfully", return_addr='/upload_image')
+    db_con.close()
+
+    #invalidate memcache key
+    memcache_invalidate_request = requests.post("http://localhost:5001/invalidate_key", data={'key': file_name })
+ 
+
+    print("Memcache invaldte: "+memcache_invalidate_request.text)
+
+    return render_template('message.html', user_message = "Your image has been uploaded successfully!", return_addr='/upload_image')
 
 @webapp.route('/show_image')
 def render_show_image():
@@ -79,24 +89,46 @@ def show_image():
     # 3. if it does exist, take the data from mem cache, and serve the website
     # 4. if it doesn't exist, take the location provided by database, and load the file
     file_name = request.form.get("text")
-    # TODO: check if key exist in database
-    # TODO: check if key exist in mem cache
-    # Placeholder: reading directly from file system all the time
-    img_file_path = "saved_images/" + file_name
-    path = Path(img_file_path)
-    if not path.is_file():
+    db_con =  get_db()
+    cursor= db_con.cursor()
+    cursor.execute("SELECT image_key FROM image_key_table1 WHERE image_key = %s GROUP BY image_key",(file_name,))
+    exist = cursor.fetchone()
+
+    # check if key exist in database
+    if exist is None:
         return render_template('message.html', user_message = "The key you specified does not exist in the database", return_addr='/show_image')
-    im = Image.open(img_file_path)
-    data = io.BytesIO()
-    if im.format is "GIF":
-        ims = ImageSequence.all_frames(im)
-        for img in ims:
-            ims[0].save(data, format=im.format, save_all=True, append_images=ims[1:])
+    db_con.close()
+
+    # check if key exist in mem cache
+    url="http://localhost:5001/get_image/"+file_name
+    memcache_imagekey_request = requests.get(url)
+    print("Memcache get image: "+memcache_imagekey_request.text)
+
+    #Load image from local system
+    if memcache_imagekey_request.json() == 'Unknown key':
+
+        img_file_path = "saved_images/" + file_name
+        path = Path(img_file_path)    
+        im = Image.open(img_file_path)
+        data = io.BytesIO()
+        if im.format is "GIF":
+            ims = ImageSequence.all_frames(im)
+            for img in ims:
+                ims[0].save(data, format=im.format, save_all=True, append_images=ims[1:])
+        else:
+            im.save(data, im.format)
+        im.save("test.gif")
+        encoded_img_data = base64.b64encode(data.getvalue())
+
+
+        #Put Key and image into memcache
+        memcache_updatekey_request = requests.post('http://localhost:5001/cache_image',data={'key': file_name ,'value':encoded_img_data})
+        print("Memcache update key value: "+memcache_updatekey_request.text)
+
+        return render_template('show_image.html', format=im.format, img_data = encoded_img_data.decode('utf-8'))
     else:
-        im.save(data, im.format)
-    im.save("test.gif")
-    encoded_img_data = base64.b64encode(data.getvalue())
-    return render_template('show_image.html', format=im.format, img_data = encoded_img_data.decode('utf-8'))
+        return render_template('show_image.html', format=im.format, img_data = memcache_imagekey_request.json().decode('utf-8'))
+
 
 @webapp.route('/available_keys')
 def available_keys():
@@ -105,6 +137,7 @@ def available_keys():
     cursor= db_con.cursor()
     cursor.execute("SELECT * FROM image_key_table1")
     placeholder_list = [row[0] for row in cursor.fetchall()]
+    db_con.close()
     return render_template("show_keylist.html",list_title='All Available Keys', input_list=placeholder_list, return_addr='/')
 
 @webapp.route('/available_keys',methods=['POST'])
@@ -115,6 +148,7 @@ def key_deletion():
     cursor.execute("DELETE FROM image_key_table1")
     cursor.execute('SET SQL_SAFE_UPDATES = 1;')
     db_con.commit()
+    db_con.close()
     return available_keys()
 
 @webapp.route('/config')
