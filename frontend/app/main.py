@@ -9,6 +9,7 @@ import base64
 import mysql.connector
 from app.config import db_config
 import os
+import glob
 
 import requests
 
@@ -102,7 +103,7 @@ def show_image():
     # check if key exist in mem cache
     url="http://localhost:5001/get_image/"+file_name
     memcache_imagekey_request = requests.get(url)
-    print("Memcache get image: "+memcache_imagekey_request.text)
+    print("Memcache get image: "+memcache_imagekey_request.json())
 
     #Load image from local system
     if memcache_imagekey_request.json() == 'Unknown key':
@@ -122,12 +123,12 @@ def show_image():
 
 
         #Put Key and image into memcache
-        memcache_updatekey_request = requests.post('http://localhost:5001/cache_image',data={'key': file_name ,'value':encoded_img_data})
+        memcache_updatekey_request = requests.post('http://localhost:5001/cache_image',data={'key': file_name ,'value':encoded_img_data.decode('utf-8')})
         print("Memcache update key value: "+memcache_updatekey_request.text)
 
         return render_template('show_image.html', format=im.format, img_data = encoded_img_data.decode('utf-8'))
     else:
-        return render_template('show_image.html', format=im.format, img_data = memcache_imagekey_request.json().decode('utf-8'))
+        return render_template('show_image.html', format='', img_data = memcache_imagekey_request.json())
 
 
 @webapp.route('/available_keys')
@@ -142,6 +143,7 @@ def available_keys():
 
 @webapp.route('/available_keys',methods=['POST'])
 def key_deletion():
+    #Clear database
     db_con =  get_db()
     cursor= db_con.cursor()
     cursor.execute('SET SQL_SAFE_UPDATES = 0;')
@@ -149,6 +151,15 @@ def key_deletion():
     cursor.execute('SET SQL_SAFE_UPDATES = 1;')
     db_con.commit()
     db_con.close()
+    #Clear local system
+    images = glob.glob('saved_images/*')
+    for im in images:
+        os.remove(im)
+
+    #Clear Memcache
+    memcache_clear_request = requests.post("http://localhost:5001/clear_cache", data={})
+    print("Memcache clear: "+memcache_clear_request.text())
+
     return available_keys()
 
 @webapp.route('/config')
