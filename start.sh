@@ -1,0 +1,1 @@
+python frontend/run.py & python3 memcache/run.py &
