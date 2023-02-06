@@ -1,1 +1,1 @@
-mysql -u root -p < schema.sql
+mysql -u root -pece1779pass < schema.sql
