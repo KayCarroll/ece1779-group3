@@ -111,7 +111,7 @@ def show_image():
     if memcache_imagekey_request.json() == 'Unknown key':
 
         img_file_path = "saved_images/" + file_name
-        path = Path(img_file_path)    
+        path = Path(img_file_path)
         im = Image.open(img_file_path)
         data = io.BytesIO()
         if im.format is "GIF":
@@ -120,7 +120,6 @@ def show_image():
                 ims[0].save(data, format=im.format, save_all=True, append_images=ims[1:])
         else:
             im.save(data, im.format)
-        im.save("test.gif")
         encoded_img_data = base64.b64encode(data.getvalue())
 
 
