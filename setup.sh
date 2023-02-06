@@ -6,4 +6,5 @@ echo "Setting up venv"
 python3 -m venv env
 source env/bin/activate
 echo "Installing required packages"
+pip install wheel==0.38.4
 python3 -m pip install -r requirements.txt
