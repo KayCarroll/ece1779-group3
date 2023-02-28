@@ -164,3 +164,10 @@ memcache/app/.vs/slnx.sqlite
 memcache/app/.vs/app/FileContentIndex/read.lock
 memcache/app/.vs/app/FileContentIndex/bb684416-69aa-438b-aedd-2eccc82db392.vsidx
 memcache/app/.vs/app/FileContentIndex/0657ca8a-3b83-412e-8347-b9fdd2989c82.vsidx
+frontend/.vs/frontend/FileContentIndex/2cc7ef0b-314d-439d-a255-31b8a393362d.vsidx
+*.vsidx
+*.lock
+frontend/.vs/frontend/v17/.suo
+frontend/.vs/ProjectSettings.json
+frontend/.vs/slnx.sqlite
+frontend/.vs/VSWorkspaceState.json
