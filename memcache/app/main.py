@@ -1,13 +1,12 @@
 import boto3
+import datetime
 import logging
 
 from flask import json, request
-from app import webapp, db, cache, CACHE_HOST
+from app import webapp, db, cache, CACHE_HOST, CLOUDWATCH_NAMESPACE
 from app.models import CacheConfig, CacheStatus
 
-CLOUDWATCH_NAMESPACE = 'MemCache Metrics'
 LOG_FORMAT = '%(asctime)s - %(name)s - [%(levelname)s] - %(message)s'
-
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, handlers=[logging.StreamHandler()])
 logging.getLogger('apscheduler').setLevel(logging.WARNING)
 
@@ -24,8 +23,14 @@ def set_initial_cache_config():
 
 def set_cache_status():
     with webapp.app_context():
-        status = CacheStatus(id=cache.id, is_active=cache.is_active, cache_host=CACHE_HOST)
-        db.session.add(status)
+        cache_entry = CacheStatus.query.get(cache.id)
+        if cache_entry:
+            cache_entry.is_active = cache.is_active
+            cache_entry.last_updated = datetime.datetime.utcnow()
+        else:
+            cache_entry = CacheStatus(id=cache.id, is_active=cache.is_active, cache_host=CACHE_HOST)
+            db.session.add(cache_entry)
+
         db.session.commit()
 
 
@@ -33,6 +38,7 @@ def store_memcache_statistics():
     # TODO: Consider checking if memcache is active and only storing metrics for active memcache.
     metric_data = [{'MetricName': key, 'Value': val} for key, val in cache.get_statistics().items()]
     boto_client.put_metric_data(Namespace=CLOUDWATCH_NAMESPACE, MetricData=metric_data)
+    # logger.info(f'METRICS: {metric_data}')
 
 
 @webapp.route('/get_image/<key>', methods=['GET'])

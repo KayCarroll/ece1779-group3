@@ -9,8 +9,9 @@ from flask_sqlalchemy import SQLAlchemy
 from app.memcache import MemCache
 
 CONFIG_FILE = 'config.json'
-CACHE_ID = os.environ.get('CACHE_ID')
-CACHE_HOST = os.environ.get('CACHE_HOST')
+CLOUDWATCH_NAMESPACE = 'MemCache Metrics'
+CACHE_ID = os.environ.get('CACHE_ID', 0)
+CACHE_HOST = os.environ.get('CACHE_HOST', '0.0.0.0')
 # CACHE_PORT = os.environ.get('CACHE_PORT')
 
 webapp = Flask(__name__)

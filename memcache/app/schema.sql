@@ -22,7 +22,7 @@ CREATE TABLE cache_status (
   id INTEGER PRIMARY KEY,
   is_active BOOLEAN NOT NULL,
   cache_host TEXT NOT NULL,
-  last_updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 /* NOTE: The cache_config table must contain at least one initial entry when the memcache app is started in order to
