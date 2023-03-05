@@ -33,17 +33,20 @@ class CacheItem:
 
 
 class MemCache:
-    def __init__(self, capacity=0, replacement_policy=''):
+    def __init__(self, cache_id, capacity=0, replacement_policy=''):
         """Initialize memory cache.
 
         Args:
+            cache_id (int): An integer indicating the id of this memcache instance.
             capacity (float): The capacity of the memory cache in MB.
             replacement_policy (str): The replacement policy to use when deciding what items in the cache to
                 replace when needing to make space for adding a new item. Can have a value of either "RR" 
                 (random replacement) or "LRU" (least recently used).
         """
+        self.id = cache_id
         self.capacity = capacity
         self.replacement_policy = replacement_policy
+        self.is_active = True
         self.cache = {}
         self.cache_misses = 0
         self.current_cache_size = 0
@@ -79,6 +82,14 @@ class MemCache:
             self._remove_item(key_to_remove)
 
         logger.debug(f'Cache size after removing item(s): {self.current_cache_size}')
+
+    def activate(self):
+        # TODO: Add logging and check if any additional logic needed to activate.
+        self.is_active = True
+
+    def deactivate(self):
+        # TODO: Add logging and check if any additional logic needed to deactivate.
+        self.is_active = False
 
     def get_keys_ordered_by_lru(self):
         """Get a list of keys currently in the cache ordered from least recently used to most recently used.
@@ -187,5 +198,6 @@ class MemCache:
             miss_rate = 0
             hit_rate = 0
 
-        return {'cache_count': len(self.cache), 'cache_size': self.current_cache_size,
-                'hit_rate': hit_rate, 'miss_rate': miss_rate, 'requests_served': self.requests_served}
+        return {'cache_id': self.id, 'is_active': self.is_active, 'cache_count': len(self.cache),
+                'cache_size': self.current_cache_size, 'hit_rate': hit_rate, 'miss_rate': miss_rate,
+                'requests_served': self.requests_served}

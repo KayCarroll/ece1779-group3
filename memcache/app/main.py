@@ -1,14 +1,17 @@
+import boto3
+import datetime
 import logging
 
 from flask import json, request
-from app import webapp, db, cache
-from app.models import CacheConfig, CacheStats
+from app import webapp, db, cache, CACHE_HOST, CLOUDWATCH_NAMESPACE
+from app.models import CacheConfig, CacheStatus
 
 LOG_FORMAT = '%(asctime)s - %(name)s - [%(levelname)s] - %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, handlers=[logging.StreamHandler()])
 logging.getLogger('apscheduler').setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
+boto_client = boto3.client('cloudwatch')
 
 
 def set_initial_cache_config():
@@ -18,13 +21,24 @@ def set_initial_cache_config():
     return config
 
 
-def store_memcache_statistics():
+def set_cache_status():
     with webapp.app_context():
-        # TODO: Do some checks/tests to make sure that using the db object in this function while
-        # its is being run in a separate thread by the scheduler won't be an issue.
-        stats = CacheStats(**cache.get_statistics())
-        db.session.add(stats)
+        cache_entry = CacheStatus.query.get(cache.id)
+        if cache_entry:
+            cache_entry.is_active = cache.is_active
+            cache_entry.last_updated = datetime.datetime.utcnow()
+        else:
+            cache_entry = CacheStatus(id=cache.id, is_active=cache.is_active, cache_host=CACHE_HOST)
+            db.session.add(cache_entry)
+
         db.session.commit()
+
+
+def store_memcache_statistics():
+    # TODO: Consider checking if memcache is active and only storing metrics for active memcache.
+    metric_data = [{'MetricName': key, 'Value': val} for key, val in cache.get_statistics().items()]
+    boto_client.put_metric_data(Namespace=CLOUDWATCH_NAMESPACE, MetricData=metric_data)
+    # logger.info(f'METRICS: {metric_data}')
 
 
 @webapp.route('/get_image/<key>', methods=['GET'])
@@ -114,4 +128,32 @@ def refresh_configuration():
     else:
         response = webapp.response_class(response=json.dumps('Config not found'), status=400,
                                          mimetype='application/json')
+    return response
+
+
+@webapp.route('/activate', methods=['POST'])
+def activate_cache():
+    """Activate the cache if not already active.
+    """
+    # TODO: Add logging and check if any additional logic needed to activate.
+    if not cache.is_active:
+        cache.activate()
+        set_cache_status()
+
+    response = webapp.response_class(response=json.dumps('OK'), status=200,
+                                     mimetype='application/json')
+    return response
+
+
+@webapp.route('/deactivate', methods=['POST'])
+def deactivate_cache():
+    """Deactivate the cache if currently active.
+    """
+    # TODO: Add logging and check if any additional logic needed to deactivate.
+    if cache.is_active:
+        cache.deactivate()
+        set_cache_status()
+
+    response = webapp.response_class(response=json.dumps('OK'), status=200,
+                                     mimetype='application/json')
     return response
