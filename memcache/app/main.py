@@ -36,7 +36,8 @@ def set_cache_status():
 
 def store_memcache_statistics():
     # TODO: Consider checking if memcache is active and only storing metrics for active memcache.
-    metric_data = [{'MetricName': key, 'Value': val} for key, val in cache.get_statistics().items()]
+    instance_id = cache.id
+    metric_data = [{'MetricName': key, 'Dimensions': [{'Name': 'ID', 'Value': instance_id}], 'Value': val} for key, val in cache.get_statistics().items()]
     boto_client.put_metric_data(Namespace=CLOUDWATCH_NAMESPACE, MetricData=metric_data)
     # logger.info(f'METRICS: {metric_data}')
 
