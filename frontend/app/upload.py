@@ -1,12 +1,12 @@
 from flask import render_template, url_for, request, g
-from app import webapp, memcache
+from app import webapp, memcache, s3_client, s3resource
 from flask import json
 from PIL import Image, ImageSequence
 from pathlib import Path
 import io
 import base64
 import mysql.connector
-from app.config import db_config
+from app.config_variables import db_config,S3_bucket_name
 import os
 import glob
 
@@ -65,10 +65,9 @@ def upload_image():
     print(file.filename)
     print(file.mimetype)
     print(file.name)
-    s3client = boto3.client('s3', region_name='us-east-1')
-    s3resource = boto3.resource('s3', region_name='us-east-1')
-    bucket_name = "ece1779samwang-a2"
-    s3client.upload_fileobj(file, bucket_name, file_name)
+
+
+    s3_client.upload_fileobj(file, S3_bucket_name, file_name)
 
 
     #invalidate memcache key

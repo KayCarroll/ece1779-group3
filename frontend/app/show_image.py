@@ -1,13 +1,13 @@
 
 from flask import render_template, url_for, request, g
-from app import webapp, memcache
+from app import webapp, memcache, s3_client, s3resource
 from flask import json
 from PIL import Image, ImageSequence
 from pathlib import Path
 import io
 import base64
 import mysql.connector
-from app.config import db_config
+from app.config_variables import db_config,S3_bucket_name
 import os
 import glob
 
@@ -68,10 +68,8 @@ def show_image():
    # memcache_imagekey_request = requests.get(url)
     #print("Memcache get image: "+memcache_imagekey_request.json())
 
-    s3client = boto3.client('s3', region_name='us-east-1')
-    s3resource = boto3.resource('s3', region_name='us-east-1')
-    bucket_name = "ece1779samwang-a2"
-    image_file = s3resource.Bucket(bucket_name).Object(file_name).get()
+
+    image_file = s3resource.Bucket(S3_bucket_name).Object(file_name).get()
     
     print(image_file)
     im = Image.open(image_file['Body'])
