@@ -1,12 +1,13 @@
 from flask import render_template, url_for, request, g
-from app import webapp, memcache
+
+from app import webapp, memcache, s3_client, s3resource, cloudwatch_client
 from flask import json
 from PIL import Image, ImageSequence
 from pathlib import Path
 import io
 import base64
 import mysql.connector
-from app.config_variables import db_config
+from app.config_variables import db_config,S3_bucket_name
 import os
 import glob
 
@@ -43,6 +44,19 @@ def config():
 @webapp.route('/config', methods=['POST'])
 def process_config():
     if "delete_all" in request.form:
+        #Clear database
+        db_con =  get_db()
+        cursor= db_con.cursor()
+        cursor.execute('SET SQL_SAFE_UPDATES = 0;')
+        cursor.execute("DELETE FROM image_key_table1")
+        cursor.execute('SET SQL_SAFE_UPDATES = 1;')
+        db_con.commit()
+        #Clear local system
+        # delete the file
+
+        s3resource.Bucket(S3_bucket_name).objects.all().delete()
+        
+        #TODO memchace one
         return render_template("message.html", user_message = "All application data is deleted", return_addr = "config")
     elif "clear_memcache" in request.form:
         return render_template("message.html", user_message = "MemCache cleared", return_addr = "config")

@@ -1,10 +1,10 @@
-db_config = {'user': 'root', 
+db_config = {'user': 'admin', 
              'password': 'ece1779pass',
-             'host': '127.0.0.1',
+             'host': 'database-2.caaxwpbav04y.us-east-1.rds.amazonaws.com',
              'database': 'image_key'}
 
-S3_bucket_name = "assignment2-s3-test"
-ACCESS_KEY = "AKIATP2NMF23IIODM2W5"
-SECRET_KEY = "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"
+S3_bucket_name = "ece1779samwang-a2"
+ACCESS_KEY = "AKIARYPZNG6KRLLMQZ3X"
+SECRET_KEY = "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"
 
 memcache_option = "manual"

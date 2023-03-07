@@ -8,7 +8,14 @@ webapp = Flask(__name__)
 memcache = {}
 s3_client = boto3.client('s3',
                     aws_access_key_id=ACCESS_KEY,
-                    aws_secret_access_key=SECRET_KEY)
+                    aws_secret_access_key=SECRET_KEY,
+                    region_name='us-east-1')
+
+s3resource  = boto3.client('s3',
+                    aws_access_key_id=ACCESS_KEY,
+                    aws_secret_access_key=SECRET_KEY,
+                    region_name='us-east-1')
+
 cloudwatch_client = boto3.client('cloudwatch',
                                  region_name = "us-east-1",
                                  aws_access_key_id=ACCESS_KEY,
