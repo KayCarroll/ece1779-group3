@@ -3,7 +3,7 @@ import datetime
 import logging
 
 from flask import json, request
-from app import webapp, db, cache, CACHE_HOST, CLOUDWATCH_NAMESPACE
+from app import webapp, db, cache, CACHE_BASE_URL, CLOUDWATCH_NAMESPACE
 from app.models import CacheConfig, CacheStatus
 
 LOG_FORMAT = '%(asctime)s - %(name)s - [%(levelname)s] - %(message)s'
@@ -28,7 +28,7 @@ def set_cache_status():
             cache_entry.is_active = cache.is_active
             cache_entry.last_updated = datetime.datetime.utcnow()
         else:
-            cache_entry = CacheStatus(id=cache.id, is_active=cache.is_active, cache_host=CACHE_HOST)
+            cache_entry = CacheStatus(id=cache.id, is_active=cache.is_active, base_url=CACHE_BASE_URL)
             db.session.add(cache_entry)
 
         db.session.commit()

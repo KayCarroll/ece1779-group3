@@ -21,7 +21,7 @@ CREATE TABLE cache_config (
 CREATE TABLE cache_status (
   id INTEGER PRIMARY KEY,
   is_active BOOLEAN NOT NULL,
-  cache_host TEXT NOT NULL,
+  base_url TEXT NOT NULL,
   last_updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
