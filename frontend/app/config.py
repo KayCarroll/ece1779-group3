@@ -1,4 +1,4 @@
-db_config = {'user': 'root', 
+db_config = {'user': 'admin', 
              'password': 'ece1779pass',
-             'host': '127.0.0.1',
+             'host': 'database-2.caaxwpbav04y.us-east-1.rds.amazonaws.com',
              'database': 'image_key'}

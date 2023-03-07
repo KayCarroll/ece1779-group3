@@ -16,6 +16,8 @@ import plotly.express as px
 import plotly.graph_objs as go
 from flask import Markup
 
+import boto3
+
 def connect_to_database():
     return mysql.connector.connect(user=db_config['user'],
                                    password=db_config['password'],
@@ -35,6 +37,7 @@ def teardown_db(exception):
         db.close()
 
 
+
 @webapp.route('/upload_image')
 def render_upload_image():
     return render_template("upload.html")
@@ -42,6 +45,8 @@ def render_upload_image():
 @webapp.route('/upload_image', methods=['POST'])
 def upload_image():
     file_name = request.form.get("text")
+    
+    
     db_con =  get_db()
     cursor= db_con.cursor()
     #Check the key is not duplicate, if it is, replace the old file
@@ -51,23 +56,25 @@ def upload_image():
     if exist is None:
         cursor.execute("INSERT INTO image_key_table1 VALUES(%s)",(file_name,))
         db_con.commit()
+        
+   
     file = request.files['my_image']
+ 
     print (file)
     print(file.content_type)
     print(file.filename)
     print(file.mimetype)
     print(file.name)
-    file_path = "saved_images/" + file_name
-    isExist = os.path.exists("saved_images")
-    if not isExist:
-        os.makedirs("saved_images")
-        print("Saved images directory is created!")
-    file.save(file_path)
+    s3client = boto3.client('s3', region_name='us-east-1')
+    s3resource = boto3.resource('s3', region_name='us-east-1')
+    bucket_name = "ece1779samwang-a2"
+    s3client.upload_fileobj(file, bucket_name, file_name)
+
 
     #invalidate memcache key
-    memcache_invalidate_request = requests.post("http://localhost:5001/invalidate_key", data={'key': file_name })
+   # memcache_invalidate_request = requests.post("http://localhost:5001/invalidate_key", data={'key': file_name })
  
 
-    print("Memcache invaldte: "+memcache_invalidate_request.text)
+    #print("Memcache invaldte: "+memcache_invalidate_request.text)
 
     return render_template('message.html', user_message = "Your image has been uploaded successfully!", return_addr='/upload_image')
