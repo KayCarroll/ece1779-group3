@@ -15,7 +15,7 @@ from plotly.offline import plot
 import plotly.express as px
 import plotly.graph_objs as go
 from flask import Markup
-
+import boto3
 
 def connect_to_database():
     return mysql.connector.connect(user=db_config['user'],
@@ -54,12 +54,16 @@ def key_deletion():
     cursor.execute('SET SQL_SAFE_UPDATES = 1;')
     db_con.commit()
     #Clear local system
-    images = glob.glob('saved_images/*')
-    for im in images:
-        os.remove(im)
+    # delete the file
+    s3client = boto3.client('s3', region_name='us-east-1')
+    s3resource = boto3.resource('s3', region_name='us-east-1')
+    bucket_name = "ece1779samwang-a2"
+    s3resource.Bucket(bucket_name).objects.all().delete()
+    
+    """
 
     #Clear Memcache
     memcache_clear_request = requests.post("http://localhost:5001/clear_cache", data={})
     print("Memcache clear: "+memcache_clear_request.text)
-
+"""
     return available_keys()
