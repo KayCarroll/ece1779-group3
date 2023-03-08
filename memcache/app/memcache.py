@@ -198,6 +198,5 @@ class MemCache:
             miss_rate = 0
             hit_rate = 0
 
-        return {'cache_id': int(self.id), 'is_active': int(self.is_active), 'cache_count': len(self.cache),
-                'cache_size': self.current_cache_size, 'hit_rate': hit_rate, 'miss_rate': miss_rate,
-                'requests_served': self.requests_served}
+        return {'cache_count': len(self.cache), 'cache_size': self.current_cache_size,
+                'hit_rate': hit_rate, 'miss_rate': miss_rate, 'requests_served': self.requests_served}

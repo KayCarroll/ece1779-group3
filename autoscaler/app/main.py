@@ -1,9 +1,10 @@
-# import boto3
+import boto3
 import logging
 import requests
 
 from flask import json, request
-from app import webapp, db, scaler, CLOUDWATCH_NAMESPACE
+from app import webapp, db, scaler
+from app.constants import CLOUDWATCH_NAMESPACE, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, REGION_NAME
 from app.autoscaler import ScalingMode
 from app.models import CacheStatus
 
@@ -12,7 +13,8 @@ logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, handlers=[logging.St
 logging.getLogger('apscheduler').setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
-# boto_client = boto3.client('cloudwatch')
+boto_client = boto3.client('cloudwatch', aws_access_key_id=AWS_ACCESS_KEY_ID,
+                           aws_secret_access_key=AWS_SECRET_ACCESS_KEY, region_name=REGION_NAME)
 
 
 def auto_scale():

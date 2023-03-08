@@ -1,15 +1,12 @@
 import atexit
 import json
-# import os
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
+from app.constants import CONFIG_FILE
 from app.autoscaler import AutoScaler, ScalingMode
-
-CONFIG_FILE = 'config.json'
-CLOUDWATCH_NAMESPACE = 'MemCache Metrics'
 
 webapp = Flask(__name__)
 webapp.config.from_file(CONFIG_FILE, load=json.load)

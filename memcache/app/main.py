@@ -3,7 +3,8 @@ import datetime
 import logging
 
 from flask import json, request
-from app import webapp, db, cache, CACHE_BASE_URL, CLOUDWATCH_NAMESPACE, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, REGION_NAME
+from app import webapp, db, cache
+from app.constants import CACHE_BASE_URL, CLOUDWATCH_NAMESPACE, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, REGION_NAME
 from app.models import CacheConfig, CacheStatus
 
 LOG_FORMAT = '%(asctime)s - %(name)s - [%(levelname)s] - %(message)s'
@@ -11,7 +12,8 @@ logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, handlers=[logging.St
 logging.getLogger('apscheduler').setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
-boto_client = boto3.client('cloudwatch', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY, region_name=REGION_NAME)
+boto_client = boto3.client('cloudwatch', aws_access_key_id=AWS_ACCESS_KEY_ID,
+                           aws_secret_access_key=AWS_SECRET_ACCESS_KEY, region_name=REGION_NAME)
 
 
 def set_initial_cache_config():
@@ -36,9 +38,7 @@ def set_cache_status():
 
 def store_memcache_statistics():
     if cache.is_active:
-        # metric_data = [{'MetricName': key, 'Value': val} for key, val in cache.get_statistics().items()]
-        instance_id = cache.id
-        metric_data = [{'MetricName': key, 'Dimensions': [{'Name': 'ID', 'Value': str(instance_id)}], 'Value': val} for key, val in cache.get_statistics().items()]
+        metric_data = [{'MetricName': key, 'Dimensions': [{'Name': 'ID', 'Value': str(cache.id)}], 'Value': val} for key, val in cache.get_statistics().items()]
         boto_client.put_metric_data(Namespace=CLOUDWATCH_NAMESPACE, MetricData=metric_data)
         # logger.info(f'METRICS: {metric_data}')
 
