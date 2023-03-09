@@ -1,12 +1,12 @@
 from flask import render_template, url_for, request, g
-from app import webapp, memcache
+from app import webapp, memcache, s3_client, s3resource
 from flask import json
 from PIL import Image, ImageSequence
 from pathlib import Path
 import io
 import base64
 import mysql.connector
-from app.config import db_config
+from app.config_variables import db_config,S3_bucket_name
 import os
 import glob
 
@@ -15,7 +15,7 @@ from plotly.offline import plot
 import plotly.express as px
 import plotly.graph_objs as go
 from flask import Markup
-
+import boto3
 
 def connect_to_database():
     return mysql.connector.connect(user=db_config['user'],
@@ -54,12 +54,16 @@ def key_deletion():
     cursor.execute('SET SQL_SAFE_UPDATES = 1;')
     db_con.commit()
     #Clear local system
-    images = glob.glob('saved_images/*')
-    for im in images:
-        os.remove(im)
+    # delete the file
+
+
+
+    s3resource.Bucket(S3_bucket_name).objects.all().delete()
+    
+    """
 
     #Clear Memcache
     memcache_clear_request = requests.post("http://localhost:5001/clear_cache", data={})
     print("Memcache clear: "+memcache_clear_request.text)
-
+"""
     return available_keys()
