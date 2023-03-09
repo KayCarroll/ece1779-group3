@@ -18,14 +18,11 @@ CREATE TABLE cache_config (
   replacement_policy TEXT NOT NULL
 );
 
-CREATE TABLE cache_stats (
-  id INTEGER PRIMARY KEY AUTO_INCREMENT,
-  created_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  cache_count INTEGER NOT NULL,
-  cache_size FLOAT NOT NULL,
-  miss_rate FLOAT NOT NULL,
-  hit_rate FLOAT NOT NULL,
-  requests_served INTEGER NOT NULL
+CREATE TABLE cache_status (
+  id INTEGER PRIMARY KEY,
+  is_active BOOLEAN NOT NULL,
+  base_url TEXT NOT NULL,
+  last_updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 /* NOTE: The cache_config table must contain at least one initial entry when the memcache app is started in order to

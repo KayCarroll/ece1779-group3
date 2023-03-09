@@ -2,6 +2,5 @@ APScheduler==3.9.1.post1
 boto3==1.26.84
 Flask==2.2.2
 Flask-SQLAlchemy==3.0.2
-mysql-connector-python==8.0.32
-mysqlclient==2.1.1
+requests
 SQLAlchemy==2.0.0

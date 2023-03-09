@@ -5,8 +5,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
-from app.constants import CONFIG_FILE, CACHE_ID
-from app.memcache import MemCache
+from app.constants import CONFIG_FILE
+from app.autoscaler import AutoScaler, ScalingMode
 
 webapp = Flask(__name__)
 webapp.config.from_file(CONFIG_FILE, load=json.load)
@@ -14,14 +14,11 @@ webapp.config.from_file(CONFIG_FILE, load=json.load)
 db = SQLAlchemy()
 db.init_app(webapp)
 
-cache = MemCache(CACHE_ID)
+scaler = AutoScaler(ScalingMode.MANUAL)
 
-from app.main import set_initial_cache_config, set_cache_status, store_memcache_statistics
-
-set_initial_cache_config()
-set_cache_status()
+from app.main import auto_scale
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(store_memcache_statistics, trigger='interval', seconds=5)
+scheduler.add_job(auto_scale, trigger='interval', seconds=60)
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown(wait=False))

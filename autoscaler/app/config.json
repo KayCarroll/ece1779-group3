@@ -1,0 +1,3 @@
+{
+    "SQLALCHEMY_DATABASE_URI": "mysql://root:ece1779pass@127.0.0.1:3306/image_key"
+}
