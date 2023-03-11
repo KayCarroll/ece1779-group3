@@ -56,7 +56,11 @@ def process_config():
 
         s3resource.Bucket(S3_bucket_name).objects.all().delete()
         
-        #TODO memchace one
+
+        #Clear Memcache
+        memcache_clear_request = requests.post("http://localhost:5001/clear_cache", data={})
+        print("Memcache clear: "+memcache_clear_request.text)
+        
         return render_template("message.html", user_message = "All application data is deleted", return_addr = "config")
     elif "clear_memcache" in request.form:
         return render_template("message.html", user_message = "MemCache cleared", return_addr = "config")
