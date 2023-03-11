@@ -5,7 +5,8 @@ import requests
 from datetime import datetime, timedelta
 from flask import json, request
 from app import webapp, db, scaler
-from app.constants import CLOUDWATCH_NAMESPACE, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, REGION_NAME
+from app.constants import (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, REGION_NAME,
+                           CLOUDWATCH_NAMESPACE, NOTIFICATION_ENDPOINT_URL)
 from app.autoscaler import ScalingMode
 from app.models import CacheStatus
 
@@ -49,12 +50,17 @@ def auto_scale():
         active_node_count = get_active_node_count()
         target_node_count = scaler.get_target_node_count(miss_rates, active_node_count)
 
+        nodes_updated = []
         node_count_delta = target_node_count - active_node_count
         for _ in range(abs(node_count_delta)):
             node_id = activate_node() if node_count_delta > 0 else deactivate_node()
             if node_id is None:
                 logger.info('No more available nodes to activate/deactivate during scaling.')
                 break
+            nodes_updated.append(node_id)
+
+        if nodes_updated:
+            send_pool_change_notification()
 
 
 def get_active_node_count():
@@ -90,6 +96,11 @@ def deactivate_node():
             return None
 
 
+def send_pool_change_notification():
+    response = request.post(NOTIFICATION_ENDPOINT_URL)
+    logger.debug(f'Notified frontend of memcache pool size change. Response code: {response.status_code}')
+
+
 @webapp.route('/automatic', methods=['POST'])
 def enable_automatic_mode():
     scaler.set_mode(ScalingMode.AUTOMATIC)
@@ -121,6 +132,7 @@ def increase_pool_size():
             response = webapp.response_class(response=json.dumps('No available inactive nodes to be activated'),
                                              status=404, mimetype='application/json')
         else:
+            send_pool_change_notification()
             response = webapp.response_class(response=json.dumps('OK'), status=200,
                                              mimetype='application/json')
     else:
@@ -137,6 +149,7 @@ def decrease_pool_size():
             response = webapp.response_class(response=json.dumps('No available active nodes to be deactivated'),
                                              status=404, mimetype='application/json')
         else:
+            send_pool_change_notification()
             response = webapp.response_class(response=json.dumps('OK'), status=200,
                                              mimetype='application/json')
     else:
