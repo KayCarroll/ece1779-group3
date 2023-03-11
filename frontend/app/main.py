@@ -7,7 +7,7 @@ from pathlib import Path
 import io
 import base64
 import mysql.connector
-from app.config_variables import db_config
+from app.config_variables import *
 import os
 import glob
 

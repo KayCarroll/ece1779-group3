@@ -59,11 +59,14 @@ def key_deletion():
 
 
     s3resource.Bucket(S3_bucket_name).objects.all().delete()
-    
-    """
-
-    #Clear Memcache
-    memcache_clear_request = requests.post("http://localhost:5001/clear_cache", data={})
-    print("Memcache clear: "+memcache_clear_request.text)
-"""
+        #Clear Memcache
+        
+    db_con =  get_db()
+    cursor= db_con.cursor()
+    cursor.execute('SELECT base_url FROM cache_status')
+    for row in cursor.fetchall():
+            
+        memcache_clear_request = requests.post(row[0]+"/clear_cache", data={})
+        print("Memcache clear: "+memcache_clear_request.text)
+        
     return available_keys()
