@@ -49,7 +49,7 @@ def auto_scale():
         active_node_count = get_active_node_count()
         target_node_count = scaler.get_target_node_count(miss_rates, active_node_count)
 
-        node_count_delta = active_node_count - target_node_count
+        node_count_delta = target_node_count - active_node_count
         for _ in range(abs(node_count_delta)):
             node_id = activate_node() if node_count_delta > 0 else deactivate_node()
             if node_id is None:
