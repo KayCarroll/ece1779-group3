@@ -10,6 +10,7 @@ import mysql.connector
 from app.config_variables import db_config,S3_bucket_name
 import os
 import glob
+from app.config_variables import *
 
 import requests
 from plotly.offline import plot
@@ -55,53 +56,35 @@ def process_config():
         # delete the file
 
         s3resource.Bucket(S3_bucket_name).objects.all().delete()
-        
 
         #Clear Memcache
-        
+
         db_con =  get_db()
         cursor= db_con.cursor()
         cursor.execute('SELECT base_url FROM cache_status')
         for row in cursor.fetchall():
-            
+
             memcache_clear_request = requests.post(row[0]+"/clear_cache", data={})
             print("Memcache clear: "+memcache_clear_request.text)
-        
+
         return render_template("message.html", user_message = "All application data is deleted", return_addr = "config")
     elif "clear_memcache" in request.form:
         db_con =  get_db()
         cursor= db_con.cursor()
         cursor.execute('SELECT base_url FROM cache_status')
         for row in cursor.fetchall():
-            
+
             memcache_clear_request = requests.post(row[0]+"/clear_cache", data={})
             print("Memcache clear: "+memcache_clear_request.text)
-        
-        
+
+
         return render_template("message.html", user_message = "MemCache cleared", return_addr = "config")
+
     cache_size = request.form.get("cache_size")
-    cache_size_float = float(cache_size)
-    print(cache_size)
-    # TODO: Update cache size for all 8 nodes
-    db_con =  get_db()
-    cursor= db_con.cursor()
-    cursor.execute('UPDATE cache_config SET capacity =  %s WHERE id = %s',(cache_size_float,1))
-      
-    
-    
-    # the option_selected has 2 possible values (both string): RR and LRU
     option_selected = request.form.get("policyRadios")
-    print(option_selected)
-    cursor.execute('UPDATE cache_config SET replacement_policy = %s WHERE id = %s',(option_selected,1))
-    db_con.commit()
-    
-    #write the options to database and call refreshConfiguration() for memcache
-    db_con =  get_db()
-    cursor= db_con.cursor()
-    cursor.execute('SELECT base_url FROM cache_status')
-    for row in cursor.fetchall():
-         
-        memcache_refresh_request = requests.post(row[0]+"/refresh_configuration")
-        print("Memcache refresh: "+memcache_refresh_request.text)
-    
-    return render_template("config.html")
+    response = requests.post(f'{manager_base_url}/api/configure_cache?cacheSize={cache_size}&policy={option_selected}')
+    return_status = response.status_code
+    if (return_status == 200):
+        return render_template("message.html", user_message = "MemCache Config Update Success", return_addr = "config")
+    else:
+        return render_template("message.html", user_message = "MemCache Config Update Failed", return_addr = "config")
