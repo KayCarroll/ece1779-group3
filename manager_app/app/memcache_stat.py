@@ -71,7 +71,6 @@ def statistics():
     }
     metrices = list(statistics.keys())
     for metric in metrices:
-        print (metric)
         statistics[metric] = get_cloudwatch_stats(metric, 30)
 
     x_axis = list(range(30, 0, -1))

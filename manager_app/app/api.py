@@ -53,7 +53,6 @@ def get_active_nodes():
     return num_active_nodes, active_nodes
 
 def update_memcache_config(replacement_policy=None, capacity=None):
-    print("capacity is: " + capacity)
     if capacity:
         db_con =  get_db()
         cursor= db_con.cursor()
@@ -65,16 +64,17 @@ def update_memcache_config(replacement_policy=None, capacity=None):
         cursor.execute('UPDATE cache_config SET replacement_policy = %s WHERE id = %s',(replacement_policy,1))
     db_con =  get_db()
     cursor= db_con.cursor()
-    cursor.execute('UPDATE cache_config SET capacity =  %s WHERE id = %s',(float(capacity),1))
-    cursor.execute('UPDATE cache_config SET replacement_policy = %s WHERE id = %s',(replacement_policy,1))
     db_con.commit()
 
     db_con =  get_db()
     cursor= db_con.cursor()
     cursor.execute('SELECT base_url FROM cache_status')
     for row in cursor.fetchall():
-        memcache_refresh_request = requests.post(row[0]+"/refresh_configuration")
-        print(row[0] + ": Memcache refresh: "+memcache_refresh_request.text)
+        try:
+            memcache_refresh_request = requests.post(row[0]+"/refresh_configuration")
+            print(row[0] + ": Memcache refresh: "+memcache_refresh_request.text)
+        except:
+            print("Connection to Mem Cache failed")
 
 def get_cloudwatch_stats(metric, duration):
     """This funciton queries the cloud watch for the metric named <metric>'s average value over the past <duration> minutes, on a per minute interval"""
@@ -110,6 +110,9 @@ def get_cloudwatch_stats(metric, duration):
             total_value = response['MetricDataResults'][0]['Values']
         else:
             total_value = list( map(add, total_value, response['MetricDataResults'][0]['Values']) )
+    # need to calculate the average for hit and miss rate
+    if metric == 'hit_rate' or metric == 'miss_rate':
+        total_value = [x / num_active_nodes for x in total_value]
     return total_value
 
 
@@ -132,11 +135,48 @@ def cache_configuration():
     shrinkRatio = request.args.get("shrinkRatio")
     maxMiss = request.args.get("maxMiss")
     minMiss = request.args.get("minMiss")
-    print ("INSIDE API")
-    print(capacity)
-    print(replacement_policy)
+    if expRatio:
+        expRatio = float(expRatio)
+    else:
+        expRatio = None
+    if shrinkRatio:
+        shrinkRatio = float(shrinkRatio)
+    else:
+        shrinkRatio = None
+    if maxMiss:
+        maxMiss = float(maxMiss)
+    else:
+        maxMiss = None
+    if minMiss:
+        minMiss = float(minMiss)
+    else:
+        minMiss = None
     update_memcache_config(replacement_policy, capacity)
-    # TODO: Update auto scaler
+    try:
+        if mode == "auto":
+            requests.post(f'{auto_scaler_base_url}/automatic', data={'max_miss_rate': float(maxMiss),
+                                                                    'min_miss_rate': float(minMiss),
+                                                                    'expand_ratio': float(expRatio),
+                                                                    'shrink_ratio': float(shrinkRatio)})
+        elif mode == "manual":
+            requests.post(f'{auto_scaler_base_url}/manual')
+            (num_active_nodes, active_nodes) = get_active_nodes()
+            numNodes = int(numNodes)
+            if (numNodes < num_active_nodes):
+                difference = num_active_nodes - numNodes
+                for i in range(difference):
+                    requests.post(f'{auto_scaler_base_url}/decrease_pool')
+            elif (numNodes > num_active_nodes):
+                difference = numNodes - num_active_nodes
+                for i in range(difference):
+                    requests.post(f'{auto_scaler_base_url}/increase_pool')
+        else:
+            # do not update auto scaler if this argument is not given
+            pass
+    except:
+        response = webapp.response_class(response=json.dumps({'success': 'false',
+                                                              'reason': "Connection to Auto Scaler Failed"}), status=503)
+        return response
     response = webapp.response_class(response=json.dumps({'success': 'true',
                                                           'mode': mode,
                                                           'numNodes': numNodes,
