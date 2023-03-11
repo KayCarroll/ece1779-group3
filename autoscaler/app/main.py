@@ -65,7 +65,7 @@ def auto_scale():
         if average_miss_rate > scaler.max_miss_rate:
             # Expand pool
             active_node_count = get_active_node_count()
-            target_node_count = active_node_count * scaler.expand_ratio
+            target_node_count = int(active_node_count * scaler.expand_ratio)
             for _ in range(target_node_count - active_node_count):
                 node_id = activate_node()
                 if node_id is None:
@@ -74,7 +74,7 @@ def auto_scale():
         elif average_miss_rate < scaler.min_miss_rate:
             # Shrink pool
             active_node_count = get_active_node_count()
-            target_node_count = active_node_count * scaler.shrink_ratio
+            target_node_count = int(active_node_count * scaler.shrink_ratio)
             for _ in range(active_node_count - target_node_count):
                 node_id = deactivate_node()
                 if node_id is None:
