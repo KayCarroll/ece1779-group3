@@ -58,18 +58,50 @@ def process_config():
         
 
         #Clear Memcache
-        memcache_clear_request = requests.post("http://localhost:5001/clear_cache", data={})
-        print("Memcache clear: "+memcache_clear_request.text)
+        
+        db_con =  get_db()
+        cursor= db_con.cursor()
+        cursor.execute('SELECT base_url FROM cache_status')
+        for row in cursor.fetchall():
+            
+            memcache_clear_request = requests.post(row[0]+"/clear_cache", data={})
+            print("Memcache clear: "+memcache_clear_request.text)
         
         return render_template("message.html", user_message = "All application data is deleted", return_addr = "config")
     elif "clear_memcache" in request.form:
+        db_con =  get_db()
+        cursor= db_con.cursor()
+        cursor.execute('SELECT base_url FROM cache_status')
+        for row in cursor.fetchall():
+            
+            memcache_clear_request = requests.post(row[0]+"/clear_cache", data={})
+            print("Memcache clear: "+memcache_clear_request.text)
+        
+        
         return render_template("message.html", user_message = "MemCache cleared", return_addr = "config")
     cache_size = request.form.get("cache_size")
     cache_size_float = float(cache_size)
     print(cache_size)
     # TODO: Update cache size for all 8 nodes
+    db_con =  get_db()
+    cursor= db_con.cursor()
+    cursor.execute('UPDATE cache_config SET capacity =  %s WHERE id = %s',(cache_size_float,1))
+      
+    
+    
     # the option_selected has 2 possible values (both string): RR and LRU
     option_selected = request.form.get("policyRadios")
     print(option_selected)
-    # TODO: write the options to database and call refreshConfiguration() for memcache
+    cursor.execute('UPDATE cache_config SET replacement_policy = %s WHERE id = %s',(option_selected,1))
+    db_con.commit()
+    
+    #write the options to database and call refreshConfiguration() for memcache
+    db_con =  get_db()
+    cursor= db_con.cursor()
+    cursor.execute('SELECT base_url FROM cache_status')
+    for row in cursor.fetchall():
+         
+        memcache_refresh_request = requests.post(row[0]+"/refresh_configuration")
+        print("Memcache refresh: "+memcache_refresh_request.text)
+    
     return render_template("config.html")
