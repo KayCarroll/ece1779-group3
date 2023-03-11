@@ -99,29 +99,3 @@ def show_image():
         return render_template('show_image.html', format=im.format, img_data = encoded_img_data.decode('utf-8'))
     else:
         return render_template('show_image.html', format='', img_data = memcache_imagekey_request.json())
-    """
-    if memcache_imagekey_request.json() == 'Unknown key':
-
-        img_file_path = "saved_images/" + file_name
-        path = Path(img_file_path)
-        im = Image.open(img_file_path)
-        data = io.BytesIO()
-        if im.format is "GIF":
-            ims = ImageSequence.all_frames(im)
-            for img in ims:
-                ims[0].save(data, format=im.format, save_all=True, append_images=ims[1:])
-        else:
-            
-            im.save(data, im.format)
-        encoded_img_data = base64.b64encode(data.getvalue())
-
-
-        #Put Key and image into memcache
-        memcache_updatekey_request = requests.post('http://localhost:5001/cache_image',data={'key': file_name ,'value':encoded_img_data.decode('utf-8')})
-        print("Memcache update key value: "+memcache_updatekey_request.text)
-
-        return render_template('show_image.html', format=im.format, img_data = encoded_img_data.decode('utf-8'))
-    
-    else:
-        return render_template('show_image.html', format='', img_data = memcache_imagekey_request.json())
-    """

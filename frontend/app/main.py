@@ -16,6 +16,9 @@ from plotly.offline import plot
 import plotly.express as px
 import plotly.graph_objs as go
 from flask import Markup
+from app.hashing import *
+import boto3
+
 
 def connect_to_database():
     return mysql.connector.connect(user=db_config['user'],
@@ -78,3 +81,44 @@ def put():
 
     return response
 
+@webapp.route('/nodeupdate', methods=['POST','GET'])
+def node_update():
+    """update the cache node.
+    """
+    
+    current_key_in_node = []
+    
+    for index, uri in active_list:
+        memcache_getkeys_request = requests.get(uri+"/get_lru_keys")
+        print("Memcache Get kes: ")
+        print(memcache_getkeys_request.json())
+        mecmcache_key_list = memcache_getkeys_request.json()
+        current_key_in_node=current_key_in_node+mecmcache_key_list
+        memcache_clear_request = requests.post(uri+"/clear_cache", data={})
+
+        
+    update_active_list()
+
+    
+    for file_name in current_key_in_node:
+        partition_numb=hash_partition(key=file_name)
+        active_list_index=route_partition_node(number_active_node=len(active_list),partition_number=partition_numb)
+        image_file = s3resource.Bucket(S3_bucket_name).Object(file_name).get()
+        im = Image.open(image_file['Body'])
+        data = io.BytesIO()
+        if im.format is "GIF":
+            ims = ImageSequence.all_frames(im)
+            for img in ims:
+                ims[0].save(data, format=im.format, save_all=True, append_images=ims[1:])
+        else:
+            
+            im.save(data, im.format)
+        encoded_img_data = base64.b64encode(data.getvalue())
+        memcache_updatekey_request = requests.post(active_list[active_list_index][1]+'/cache_image',data={'key': file_name ,'value':encoded_img_data.decode('utf-8')})
+        print("Memcache update key value: "+memcache_updatekey_request.text)
+
+    
+    
+    response = webapp.response_class(response=json.dumps('OK'), status=200,
+                                     mimetype='application/json')
+    return response
