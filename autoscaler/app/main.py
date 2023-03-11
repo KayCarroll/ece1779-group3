@@ -42,9 +42,9 @@ def auto_scale():
                                                    EndTime=end_time, ScanBy='TimestampAscending')
 
         miss_rates = []
-        for metric in data_results['MetricDataResults'].values():
+        for metric in data_results['MetricDataResults']:
             miss_rates.extend(metric['Values'])
-        logger.debug(f'miss_rates={miss_rates}')
+        logger.debug(f'Cache miss_rates from {start_time} to {end_time} - {miss_rates}')
 
         active_node_count = get_active_node_count()
         target_node_count = scaler.get_target_node_count(miss_rates, active_node_count)
