@@ -29,6 +29,7 @@ def set_cache_status():
         cache_entry = CacheStatus.query.get(cache.id)
         if cache_entry:
             cache_entry.is_active = cache.is_active
+            cache_entry.base_url = CACHE_BASE_URL
             cache_entry.last_updated = datetime.datetime.utcnow()
         else:
             cache_entry = CacheStatus(id=cache.id, is_active=cache.is_active, base_url=CACHE_BASE_URL)
