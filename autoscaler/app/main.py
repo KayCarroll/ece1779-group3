@@ -12,74 +12,44 @@ from app.models import CacheStatus
 LOG_FORMAT = '%(asctime)s - %(name)s - [%(levelname)s] - %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, handlers=[logging.StreamHandler()])
 logging.getLogger('apscheduler').setLevel(logging.WARNING)
+logging.getLogger('botocore').setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 boto_client = boto3.client('cloudwatch', aws_access_key_id=AWS_ACCESS_KEY_ID,
                            aws_secret_access_key=AWS_SECRET_ACCESS_KEY, region_name=REGION_NAME)
 
 
+def get_miss_rate_metric_query():
+    dimensions = [{'Name': 'ID', 'Value': str(i)} for i in range(8)]
+    metric = {'Namespace': CLOUDWATCH_NAMESPACE, 'MetricName': 'miss_rate', 'Dimensions': dimensions}
+
+    metric_query = {'Id': 'miss_rate_metrics',
+                    'MetricStat': {'Metric': metric, 'Period': 60, 'Stat': 'Average'},
+                    'ReturnData': True}
+    return metric_query
+
+
 def auto_scale():
     if scaler.mode == ScalingMode.AUTOMATIC:
-        # TODO: Actually implement auto scaling logic
-        # metric_data_queries = [{'Id': 'miss_rate_metrics',
-        #                         'MetricStat': {'Metric': {'Namespace': CLOUDWATCH_NAMESPACE,
-        #                                                   'MetricName': 'miss_rate',
-        #                                                   },
-        #                                        'Period': 5,
-        #                                        'Stat': 'Average'},
-        #                         'ReturnData': True}]
-        # end_time = datetime.utcnow()
-        # start_time = end_time - timedelta(minutes=1)
-        # data_results = boto_client.get_metric_data(MetricDataQueries=metric_data_queries,
-        #                                            StartTime=start_time, EndTime=end_time)
-
-        metric_data_queries = [{
-                'Id': 'testID',
-                'MetricStat': {
-                    'Metric': {
-                        'Namespace': 'MemCache Metrics',
-                        'MetricName': 'miss_rate',
-                        'Dimensions': [
-                            {
-                                'Name': 'ID',
-                                'Value': '1'
-                            },
-                        ]
-                    },
-                    'Period': 1*60,
-                    'Stat': 'Average',
-                },
-                'ReturnData': True,
-            },]
+        metric_data_queries = [get_miss_rate_metric_query()]
 
         start_time = datetime.utcnow() - timedelta(seconds=200 * 60)
-        end_time = datetime.utcnow() - timedelta(seconds=0 * 60)
+        end_time = datetime.utcnow()
         data_results = boto_client.get_metric_data(MetricDataQueries=metric_data_queries, StartTime=start_time,
-                                                   EndTime=end_time, ScanBy='TimestampAscending',)
+                                                   EndTime=end_time, ScanBy='TimestampAscending')
 
         # TODO: Figure out if 'values' contains the average miss_rate or a list of all miss_rates
-        values = data_results['MetricDataResults'][0]['Values']
-        # NOTE: For now, assuming values is a list of miss_rates and not teh average but will need to check this later.
-        average_miss_rate = sum(values)/len(values)
+        miss_rates = data_results['MetricDataResults'][0]['Values']
 
-        if average_miss_rate > scaler.max_miss_rate:
-            # Expand pool
-            active_node_count = get_active_node_count()
-            target_node_count = int(active_node_count * scaler.expand_ratio)
-            for _ in range(target_node_count - active_node_count):
-                node_id = activate_node()
-                if node_id is None:
-                    logger.info('No more available inactive nodes to be activated')
-                    break
-        elif average_miss_rate < scaler.min_miss_rate:
-            # Shrink pool
-            active_node_count = get_active_node_count()
-            target_node_count = int(active_node_count * scaler.shrink_ratio)
-            for _ in range(active_node_count - target_node_count):
-                node_id = deactivate_node()
-                if node_id is None:
-                    logger.info('No more available active nodes to be deactivated')
-                    break
+        active_node_count = get_active_node_count()
+        target_node_count = scaler.get_target_node_count(miss_rates, active_node_count)
+
+        node_count_delta = active_node_count - target_node_count
+        for _ in range(abs(node_count_delta)):
+            node_id = activate_node() if node_count_delta > 0 else deactivate_node()
+            if node_id is None:
+                logger.info('No more available nodes to activate/deactivate during scaling.')
+                break
 
 
 def get_active_node_count():

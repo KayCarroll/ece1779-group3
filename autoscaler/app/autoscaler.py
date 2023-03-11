@@ -26,3 +26,15 @@ class AutoScaler:
             self.expand_ratio = expand_ratio
         if shrink_ratio:
             self.shrink_ratio = shrink_ratio
+
+    def get_target_node_count(self, miss_rates, active_node_count):
+        average_miss_rate = sum(miss_rates)/len(miss_rates)
+
+        if average_miss_rate > self.max_miss_rate:
+            target_node_count = int(active_node_count * self.expand_ratio)
+        elif average_miss_rate < self.min_miss_rate:
+            target_node_count = int(active_node_count * self.shrink_ratio)
+        else:
+            target_node_count = active_node_count
+
+        return target_node_count
