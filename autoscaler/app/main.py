@@ -11,7 +11,7 @@ from app.models import CacheStatus
 
 LOG_FORMAT = '%(asctime)s - %(name)s - [%(levelname)s] - %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, handlers=[logging.StreamHandler()])
-for module_name in ['apscheduler', 'botocore']:
+for module_name in ['apscheduler', 'botocore', 'urllib3']:
     logging.getLogger(module_name).setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
@@ -19,27 +19,32 @@ boto_client = boto3.client('cloudwatch', aws_access_key_id=AWS_ACCESS_KEY_ID,
                            aws_secret_access_key=AWS_SECRET_ACCESS_KEY, region_name=REGION_NAME)
 
 
-def get_miss_rate_metric_query():
-    dimensions = [{'Name': 'ID', 'Value': str(i)} for i in range(8)]
-    metric = {'Namespace': CLOUDWATCH_NAMESPACE, 'MetricName': 'miss_rate', 'Dimensions': dimensions}
+def get_miss_rate_metrics_queries():
+    metrics_queries = []
+    for i in range(8):
+        dimensions = [{'Name': 'ID', 'Value': str(i)}]
+        metric = {'Namespace': CLOUDWATCH_NAMESPACE, 'MetricName': 'miss_rate', 'Dimensions': dimensions}
 
-    metric_query = {'Id': 'miss_rate_metrics',
-                    'MetricStat': {'Metric': metric, 'Period': 60, 'Stat': 'Average'},
-                    'ReturnData': True}
-    return metric_query
+        metric_query = {'Id': f'miss_rate_metrics_{i}',
+                        'MetricStat': {'Metric': metric, 'Period': 60, 'Stat': 'Average'},
+                        'ReturnData': True}
+        metrics_queries.append(metric_query)
+    return metrics_queries
 
 
 def auto_scale():
     if scaler.mode == ScalingMode.AUTOMATIC:
-        metric_data_queries = [get_miss_rate_metric_query()]
+        metric_data_queries = get_miss_rate_metrics_queries()
 
-        start_time = datetime.utcnow() - timedelta(seconds=200 * 60)
+        start_time = datetime.utcnow() - timedelta(seconds=60)
         end_time = datetime.utcnow()
         data_results = boto_client.get_metric_data(MetricDataQueries=metric_data_queries, StartTime=start_time,
                                                    EndTime=end_time, ScanBy='TimestampAscending')
 
-        # TODO: Figure out if 'values' contains the average miss_rate or a list of all miss_rates
-        miss_rates = data_results['MetricDataResults'][0]['Values']
+        miss_rates = []
+        for metric in data_results['MetricDataResults'].values():
+            miss_rates.extend(metric['Values'])
+        logger.debug(f'miss_rates={miss_rates}')
 
         active_node_count = get_active_node_count()
         target_node_count = scaler.get_target_node_count(miss_rates, active_node_count)

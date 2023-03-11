@@ -41,7 +41,7 @@ def store_memcache_statistics():
     if cache.is_active:
         metric_data = [{'MetricName': key, 'Dimensions': [{'Name': 'ID', 'Value': str(cache.id)}], 'Value': val} for key, val in cache.get_statistics().items()]
         boto_client.put_metric_data(Namespace=CLOUDWATCH_NAMESPACE, MetricData=metric_data)
-        # logger.info(f'METRICS: {metric_data}')
+        logger.info(f'Updated MemCache metrics for cache with id {cache.id}')
 
 
 @webapp.route('/get_image/<key>', methods=['GET'])
