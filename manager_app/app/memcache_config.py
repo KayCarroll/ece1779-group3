@@ -45,28 +45,7 @@ def config():
 @webapp.route('/config', methods=['POST'])
 def process_config():
     if "delete_all" in request.form:
-        #Clear database
-        db_con =  get_db()
-        cursor= db_con.cursor()
-        cursor.execute('SET SQL_SAFE_UPDATES = 0;')
-        cursor.execute("DELETE FROM image_key_table1")
-        cursor.execute('SET SQL_SAFE_UPDATES = 1;')
-        db_con.commit()
-        #Clear local system
-        # delete the file
-
-        s3resource.Bucket(S3_bucket_name).objects.all().delete()
-
-        #Clear Memcache
-
-        db_con =  get_db()
-        cursor= db_con.cursor()
-        cursor.execute('SELECT base_url FROM cache_status')
-        for row in cursor.fetchall():
-
-            memcache_clear_request = requests.post(row[0]+"/clear_cache", data={})
-            print("Memcache clear: "+memcache_clear_request.text)
-
+        requests.post(f'{manager_base_url}/api/delete_all')
         return render_template("message.html", user_message = "All application data is deleted", return_addr = "config")
     elif "clear_memcache" in request.form:
         db_con =  get_db()

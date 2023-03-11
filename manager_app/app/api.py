@@ -10,12 +10,15 @@ import mysql.connector
 from app.config_variables import db_config,S3_bucket_name
 import os
 import glob
+from app.config_variables import *
 
 import requests
 from plotly.offline import plot
 import plotly.express as px
 import plotly.graph_objs as go
 from flask import Markup
+from datetime import datetime, timedelta
+from operator import add
 
 
 def connect_to_database():
@@ -41,11 +44,13 @@ def get_active_nodes():
     db_con =  get_db()
     cursor= db_con.cursor()
     cursor.execute('SELECT id, is_active FROM cache_status;')
-    active_nodes = 0
+    num_active_nodes = 0
+    active_nodes = []
     for row in cursor.fetchall():
         if row[1] == 1:
-            active_nodes = active_nodes + 1
-    return active_nodes
+            num_active_nodes = num_active_nodes + 1
+            active_nodes.append(row[0])
+    return num_active_nodes, active_nodes
 
 def update_memcache_config(replacement_policy=None, capacity=None):
     print("capacity is: " + capacity)
@@ -71,11 +76,48 @@ def update_memcache_config(replacement_policy=None, capacity=None):
         memcache_refresh_request = requests.post(row[0]+"/refresh_configuration")
         print(row[0] + ": Memcache refresh: "+memcache_refresh_request.text)
 
-@webapp.route('/api/getNumNodes')
+def get_cloudwatch_stats(metric, duration):
+    """This funciton queries the cloud watch for the metric named <metric>'s average value over the past <duration> minutes, on a per minute interval"""
+    (num_active_nodes, active_nodes) = get_active_nodes()
+    total_value = []
+    for node in active_nodes:
+        response = cloudwatch_client.get_metric_data(
+            MetricDataQueries=[
+                {
+                    'Id': 'testID',
+                    'MetricStat': {
+                        'Metric': {
+                            'Namespace': CLOUDWATCH_NAMESPACE,
+                            'MetricName': metric,
+                            'Dimensions': [
+                                {
+                                    'Name': 'ID',
+                                    'Value': str(node)
+                                },
+                            ]
+                        },
+                        'Period': 1*60,
+                        'Stat': 'Average',
+                    },
+                    'ReturnData': True,
+                },
+            ],
+            StartTime=datetime.utcnow() - timedelta(seconds=duration * 60),
+            EndTime=datetime.utcnow() - timedelta(seconds=0 * 60),
+            ScanBy='TimestampDescending',
+        )
+        if not total_value:
+            total_value = response['MetricDataResults'][0]['Values']
+        else:
+            total_value = list( map(add, total_value, response['MetricDataResults'][0]['Values']) )
+    return total_value
+
+
+@webapp.route('/api/getNumNodes', methods=['GET','POST'])
 def return_num_active_nodes():
-    active_nodes = get_active_nodes()
+    (num_active_nodes, active_nodes) = get_active_nodes()
     response = webapp.response_class(response=json.dumps({'success': 'true',
-                                                              'numNodes': active_nodes}), status=200)
+                                                              'numNodes': num_active_nodes}), status=200)
     return response
 
 @webapp.route('/api/configure_cache', methods=['GET','POST'])
@@ -100,4 +142,46 @@ def cache_configuration():
                                                           'numNodes': numNodes,
                                                           'cacheSize': int(capacity),
                                                           'policy': replacement_policy}), status=200)
+    return response
+
+@webapp.route('/api/delete_all', methods=['GET','POST'])
+def delete_everything():
+    #Clear database
+    db_con =  get_db()
+    cursor= db_con.cursor()
+    cursor.execute('SET SQL_SAFE_UPDATES = 0;')
+    cursor.execute("DELETE FROM image_key_table1")
+    cursor.execute('SET SQL_SAFE_UPDATES = 1;')
+    db_con.commit()
+    # delete S3 files
+    s3resource.Bucket(S3_bucket_name).objects.all().delete()
+    #Clear Memcache
+    db_con =  get_db()
+    cursor= db_con.cursor()
+    cursor.execute('SELECT base_url FROM cache_status')
+    for row in cursor.fetchall():
+        memcache_clear_request = requests.post(row[0]+"/clear_cache", data={})
+        print("Memcache clear: "+memcache_clear_request.text)
+
+    response = webapp.response_class(response=json.dumps({'success': 'true'}), status=200)
+    return response
+
+@webapp.route('/api/getRate', methods=['GET','POST'])
+def get_cloudwatch_rate():
+    rate_type = request.args.get("rate")
+    original_rate = rate_type
+    if rate_type == 'hit':
+        rate_type = 'hit_rate'
+    elif rate_type == 'miss':
+        rate_type = 'miss_rate'
+    else:
+        response = webapp.response_class(response=json.dumps({'success': 'false',
+                                                              'rate': rate_type,
+                                                              'reason': "Rate type not supported, the supported options are: hit or miss"}), status=503)
+        return response
+    stat_list = get_cloudwatch_stats(rate_type, 30)
+    last_minute_stat = stat_list[0]
+    response = webapp.response_class(response=json.dumps({'success': 'true',
+                                                          'rate': original_rate,
+                                                          "value": last_minute_stat}), status=200)
     return response

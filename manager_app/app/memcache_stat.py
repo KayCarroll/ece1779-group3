@@ -7,14 +7,17 @@ import io
 import base64
 import mysql.connector
 from app.config_variables import *
+from app.api import get_active_nodes
 import os
 import glob
+from app.api import get_cloudwatch_stats
 
 import requests
 from plotly.offline import plot
 import plotly.express as px
 import plotly.graph_objs as go
 from flask import Markup
+
 
 import boto3
 
@@ -58,22 +61,25 @@ def statistics():
     #     requests_served.append(row[6])
 
     # TODO: find number of active nodes and gather cloudwatch data
-    active_node_ID = [0, 1, 3, 4, 7]
-    inactive_node_ID = [2, 5, 6]
-    number_of_active_nodes = [1, 3, 4, 4, 5]
-    cache_count=[3, 4, 7, 12, 15]
-    cache_size=[4.3, 5.3, 7.2, 17.4, 22.1]
-    miss_rate=[0.9, 0.2, 0.3, 0.15, 0.1]
-    hit_rate=[0.1, 0.8, 0.7, 0.85, 0.9]
-    requests_served=[21, 43, 10, 0, 30]
+    (num_active_nodes, active_node_ID) = get_active_nodes()
+    statistics = {
+        "cache_count": [],
+        "cache_size": [],
+        "miss_rate": [],
+        "hit_rate": [],
+        "requests_served": [],
+    }
+    metrices = list(statistics.keys())
+    for metric in metrices:
+        print (metric)
+        statistics[metric] = get_cloudwatch_stats(metric, 30)
 
-    x_axis = list(range(0, 30, 1))
-    active_nodes_plot = plot({"data":go.Scatter(x=x_axis, y=number_of_active_nodes), "layout": go.Layout(title = "Active Nodes", xaxis_title = "Time(min)",yaxis_title = "Number of Active Nodes")},output_type='div')
-    cache_count_plot = plot({"data":go.Scatter(x=x_axis, y=cache_count), "layout": go.Layout(title = "Cache Count", xaxis_title = "Time(min)",yaxis_title = "Number of Cache")},output_type='div')
-    cache_size_plot = plot({"data":go.Scatter(x=x_axis, y=cache_size), "layout": go.Layout(title = "Cache Size", xaxis_title = "Time(min)",yaxis_title = "MB")},output_type='div')
-    miss_rate_plot = plot({"data":go.Scatter(x=x_axis, y=miss_rate), "layout": go.Layout(title = "Miss Rate", xaxis_title = "Time(min)",yaxis_title = "Rate")},output_type='div')
-    hit_rate_plot = plot({"data":go.Scatter(x=x_axis, y=hit_rate), "layout": go.Layout(title = "Hit Rate", xaxis_title = "Time(min)",yaxis_title = "Rate")},output_type='div')
-    requests_served_plot = plot({"data":go.Scatter(x=x_axis, y=requests_served), "layout": go.Layout(title = "Requests Served", xaxis_title = "Time(min)",yaxis_title = "Number of Request")},output_type='div')
+    x_axis = list(range(30, 0, -1))
+    cache_count_plot = plot({"data":go.Scatter(x=x_axis, y=statistics['cache_count']), "layout": go.Layout(title = "Cache Count", xaxis_title = "Time(min)",yaxis_title = "Items in Cache")},output_type='div')
+    cache_size_plot = plot({"data":go.Scatter(x=x_axis, y=statistics['cache_size']), "layout": go.Layout(title = "Cache Size", xaxis_title = "Time(min)",yaxis_title = "MB")},output_type='div')
+    miss_rate_plot = plot({"data":go.Scatter(x=x_axis, y=statistics['miss_rate']), "layout": go.Layout(title = "Miss Rate", xaxis_title = "Time(min)",yaxis_title = "Rate")},output_type='div')
+    hit_rate_plot = plot({"data":go.Scatter(x=x_axis, y=statistics['hit_rate']), "layout": go.Layout(title = "Hit Rate", xaxis_title = "Time(min)",yaxis_title = "Rate")},output_type='div')
+    requests_served_plot = plot({"data":go.Scatter(x=x_axis, y=statistics['requests_served']), "layout": go.Layout(title = "Requests Served", xaxis_title = "Time(min)",yaxis_title = "Number of Request")},output_type='div')
 
-    plot_list = ["Active Nodes: " + str(active_node_ID), "Inactive Nodes: " + str(inactive_node_ID), Markup(active_nodes_plot), Markup(cache_count_plot),Markup(cache_size_plot),Markup(miss_rate_plot),Markup(hit_rate_plot),Markup(requests_served_plot)]
+    plot_list = ["Number of Active Nodes: " + str(num_active_nodes), "Active Nodes: " + str(active_node_ID), Markup(cache_count_plot),Markup(cache_size_plot),Markup(miss_rate_plot),Markup(hit_rate_plot),Markup(requests_served_plot)]
     return render_template("show_list.html", list_title='MemCache Statistics', input_list=plot_list, return_addr='/')
