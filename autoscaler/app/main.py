@@ -11,8 +11,8 @@ from app.models import CacheStatus
 
 LOG_FORMAT = '%(asctime)s - %(name)s - [%(levelname)s] - %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, handlers=[logging.StreamHandler()])
-logging.getLogger('apscheduler').setLevel(logging.WARNING)
-logging.getLogger('botocore').setLevel(logging.WARNING)
+for module_name in ['apscheduler', 'botocore']:
+    logging.getLogger(module_name).setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 boto_client = boto3.client('cloudwatch', aws_access_key_id=AWS_ACCESS_KEY_ID,

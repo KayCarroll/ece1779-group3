@@ -1,4 +1,8 @@
+import logging
+
 from enum import Enum
+
+logger = logging.getLogger(__name__)
 
 
 class ScalingMode(Enum):
@@ -28,6 +32,10 @@ class AutoScaler:
             self.shrink_ratio = shrink_ratio
 
     def get_target_node_count(self, miss_rates, active_node_count):
+        if not miss_rates:
+            logger.error(f'Cannot execute auto scaling. No miss rate metrics available.')
+            return active_node_count
+
         average_miss_rate = sum(miss_rates)/len(miss_rates)
 
         if average_miss_rate > self.max_miss_rate:
