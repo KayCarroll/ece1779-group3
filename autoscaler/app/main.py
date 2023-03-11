@@ -21,16 +21,41 @@ boto_client = boto3.client('cloudwatch', aws_access_key_id=AWS_ACCESS_KEY_ID,
 def auto_scale():
     if scaler.mode == ScalingMode.AUTOMATIC:
         # TODO: Actually implement auto scaling logic
-        metric_data_queries = [{'Id': 'MISS_RATE_METRICS',
-                                'MetricStat': {'Metric': {'Namespace': CLOUDWATCH_NAMESPACE,
-                                                          'MetricName': 'miss_rate'},
-                                               'Period': 5,
-                                               'Stat': 'Average'},
-                                'ReturnData': False}]
-        end_time = datetime.utcnow()
-        start_time = end_time - timedelta(minutes=1)
-        data_results = boto_client.get_metric_data(MetricDataQueries=metric_data_queries,
-                                                   StartTime=start_time, EndTime=end_time)
+        # metric_data_queries = [{'Id': 'miss_rate_metrics',
+        #                         'MetricStat': {'Metric': {'Namespace': CLOUDWATCH_NAMESPACE,
+        #                                                   'MetricName': 'miss_rate',
+        #                                                   },
+        #                                        'Period': 5,
+        #                                        'Stat': 'Average'},
+        #                         'ReturnData': True}]
+        # end_time = datetime.utcnow()
+        # start_time = end_time - timedelta(minutes=1)
+        # data_results = boto_client.get_metric_data(MetricDataQueries=metric_data_queries,
+        #                                            StartTime=start_time, EndTime=end_time)
+
+        metric_data_queries = [{
+                'Id': 'testID',
+                'MetricStat': {
+                    'Metric': {
+                        'Namespace': 'MemCache Metrics',
+                        'MetricName': 'miss_rate',
+                        'Dimensions': [
+                            {
+                                'Name': 'ID',
+                                'Value': '1'
+                            },
+                        ]
+                    },
+                    'Period': 1*60,
+                    'Stat': 'Average',
+                },
+                'ReturnData': True,
+            },]
+
+        start_time = datetime.utcnow() - timedelta(seconds=200 * 60)
+        end_time = datetime.utcnow() - timedelta(seconds=0 * 60)
+        data_results = boto_client.get_metric_data(MetricDataQueries=metric_data_queries, StartTime=start_time,
+                                                   EndTime=end_time, ScanBy='TimestampAscending',)
 
         # TODO: Figure out if 'values' contains the average miss_rate or a list of all miss_rates
         values = data_results['MetricDataResults'][0]['Values']
