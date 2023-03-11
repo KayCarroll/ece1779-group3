@@ -7,7 +7,7 @@ class ScalingMode(Enum):
 
 
 class AutoScaler:
-    def __init__(self, mode):
+    def __init__(self, mode, max_miss_rate=0.8, min_miss_rate=0.2, expand_pool_factor=2, shrink_pool_factor=0.5):
         self.mode = mode
         self.max_miss_rate = None
         self.min_miss_rate = None
