@@ -23,13 +23,13 @@ class AutoScaler:
 
     def update_config(self, max_miss_rate=None, min_miss_rate=None, expand_ratio=None, shrink_ratio=None):
         if max_miss_rate:
-            self.max_miss_rate = max_miss_rate
+            self.max_miss_rate = float(max_miss_rate)
         if min_miss_rate:
-            self.min_miss_rate = min_miss_rate
+            self.min_miss_rate = float(min_miss_rate)
         if expand_ratio:
-            self.expand_ratio = expand_ratio
+            self.expand_ratio = float(expand_ratio)
         if shrink_ratio:
-            self.shrink_ratio = shrink_ratio
+            self.shrink_ratio = 1/float(shrink_ratio)
 
     def get_target_node_count(self, miss_rates, active_node_count):
         if not miss_rates:

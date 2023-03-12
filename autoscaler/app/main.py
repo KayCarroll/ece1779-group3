@@ -97,7 +97,7 @@ def deactivate_node():
 
 
 def send_pool_change_notification():
-    response = request.post(NOTIFICATION_ENDPOINT_URL)
+    response = requests.post(NOTIFICATION_ENDPOINT_URL)
     logger.debug(f'Notified frontend of memcache pool size change. Response code: {response.status_code}')
 
 

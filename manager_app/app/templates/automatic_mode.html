@@ -63,8 +63,8 @@
       } else if (document.getElementById("expand_ratio_field").value.length == 0) {
         alert("Expand ratio cannot be empty");
         return false;
-      } else if(document.getElementById("shrink_ratio_field").value >= 1 ) {
-          alert("The shrink ratio must be smaller than 1");
+      } else if(document.getElementById("shrink_ratio_field").value <= 1 ) {
+          alert("The shrink ratio must be larger than 1");
           return false;
       } else if (document.getElementById("shrink_ratio_field").value.length == 0) {
         alert("Shrink ratio cannot be empty");
