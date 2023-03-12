@@ -83,6 +83,6 @@ def upload_image():
     memcache_invalidate_request = requests.post(active_list[active_list_index][1]+"/invalidate_key", data={'key': file_name })
  
 
-    #print("Memcache invaldte: "+memcache_invalidate_request.text)
+    print("Memcache" +str(active_list[active_list_index][0]) +" invaldte: "+memcache_invalidate_request.text)
 
     return render_template('message.html', user_message = "Your image has been uploaded successfully!", return_addr='/upload_image')

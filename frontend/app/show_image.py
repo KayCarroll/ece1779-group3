@@ -95,8 +95,8 @@ def show_image():
             im.save(data, im.format)
         encoded_img_data = base64.b64encode(data.getvalue())
         memcache_updatekey_request = requests.post(active_list[active_list_index][1]+'/cache_image',data={'key': file_name ,'value':encoded_img_data.decode('utf-8')})
-        print("Memcache" + active_list[active_list_index][0] + " update key value: "+memcache_updatekey_request.text)
+        print("Memcache" + str(active_list[active_list_index][0]) + " update key value: "+memcache_updatekey_request.text)
         return render_template('show_image.html', format=im.format, img_data = encoded_img_data.decode('utf-8'))
     else:
-        print("Memcache" + active_list[active_list_index][0]+" get image ")
+        print("Memcache" + str(active_list[active_list_index][0])+" get image ")
         return render_template('show_image.html', format='', img_data = memcache_imagekey_request.json())

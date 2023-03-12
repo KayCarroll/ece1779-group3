@@ -67,6 +67,6 @@ def key_deletion():
     for row in cursor.fetchall():
             
         memcache_clear_request = requests.post(row[0]+"/clear_cache", data={})
-        print("Memcache " +row[0]+" clear: "+memcache_clear_request.text)
+        print("Memcache " +str(row[0])+" clear: "+memcache_clear_request.text)
         
     return available_keys()
