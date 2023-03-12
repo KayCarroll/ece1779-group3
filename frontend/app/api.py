@@ -153,10 +153,10 @@ def get_image(key_value):
             else:
                 
                 im.save(data, im.format)
-            encoded_img_data = base64.b64encode(data.getvalue())
+            image_str = base64.b64encode(data.getvalue())
 
-        cache_response = requests.post(f'{CACHE_API_BASE_URL}/cache_image',
-                                       data={'key': key_value ,'value': encoded_img_data.decode('utf-8')})
+            cache_response = requests.post(f'{CACHE_API_BASE_URL}/cache_image',
+                                           data={'key': key_value ,'value': image_str.decode('utf-8')})
 
         response = webapp.response_class(response=json.dumps({'success': 'true', 'key': key_value,
                                                               'content': image_str.decode('utf-8')}), status=200)
