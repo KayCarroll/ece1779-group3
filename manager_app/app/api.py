@@ -56,7 +56,6 @@ def update_memcache_config(replacement_policy=None, capacity=None):
     if capacity:
         db_con =  get_db()
         cursor= db_con.cursor()
-        print('UPDATE cache_config SET capacity =  %s WHERE id = %s',(float(capacity),1))
         cursor.execute('UPDATE cache_config SET capacity =  %s WHERE id = %s',(float(capacity),1))
     if replacement_policy:
         db_con =  get_db()
@@ -224,4 +223,32 @@ def get_cloudwatch_rate():
     response = webapp.response_class(response=json.dumps({'success': 'true',
                                                           'rate': original_rate,
                                                           "value": last_minute_stat}), status=200)
+    return response
+
+
+@webapp.route('/api/upload', methods=['POST'])
+def route_upload_image():
+    try:
+        key = request.form.get('key')
+        image_file = request.files['file']
+        frontend_response = requests.post(f"{frontend_base_url}/upload_image", data={'text': key}, files = {'my_image': image_file})
+        response = webapp.response_class(response=json.dumps({'success': 'true',
+                                                              'key': key}), status=200)
+    except Exception as e:
+        response = webapp.response_class(response=json.dumps({'success': 'false',
+                                                              'error': {'code': 400, 'message': str(e)}}), status=400)
+    return response
+
+@webapp.route('/api/list_keys', methods=['POST', 'GET'])
+def get_list_of_keys():
+    frontend_response = requests.post(f"{frontend_base_url}/api/list_keys")
+    data = frontend_response.json()
+    response = webapp.response_class(response = json.dumps(data), status=200)
+    return response
+
+@webapp.route('/api/key/<key_value>', methods=['POST', 'GET'])
+def retrieve_image(key_value):
+    frontend_response = requests.post(f"{frontend_base_url}/api/key/{key_value}")
+    data = frontend_response.json()
+    response = webapp.response_class(response = json.dumps(data), status=200)
     return response
