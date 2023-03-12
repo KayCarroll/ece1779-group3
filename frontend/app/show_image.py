@@ -16,6 +16,8 @@ from plotly.offline import plot
 import plotly.express as px
 import plotly.graph_objs as go
 from flask import Markup
+from app.hashing import *
+
 import boto3
 
 def connect_to_database():
@@ -64,32 +66,25 @@ def show_image():
         return render_template('message.html', user_message = "The key you specified does not exist in the database", return_addr='/show_image')
 
     # check if key exist in mem cache
-   # url="http://localhost:5001/get_image/"+file_name
-   # memcache_imagekey_request = requests.get(url)
-    #print("Memcache get image: "+memcache_imagekey_request.json())
-
-
-    image_file = s3resource.Bucket(S3_bucket_name).Object(file_name).get()
     
-    print(image_file)
-    im = Image.open(image_file['Body'])
-    data = io.BytesIO()
-    if im.format is "GIF":
-        ims = ImageSequence.all_frames(im)
-        for img in ims:
-            ims[0].save(data, format=im.format, save_all=True, append_images=ims[1:])
-    else:
-            
-        im.save(data, im.format)
-    encoded_img_data = base64.b64encode(data.getvalue())
-    return render_template('show_image.html', format=im.format, img_data = encoded_img_data.decode('utf-8'))
-    #Load image from local system
-    """
-    if memcache_imagekey_request.json() == 'Unknown key':
+    update_active_list()
+    partition_numb=hash_partition(key=file_name)
+    active_list_index=route_partition_node(number_active_node=len(active_list),partition_number=partition_numb)
+    
+    
+    
+    url=active_list[active_list_index][1]+"/get_image/"+file_name
+    memcache_imagekey_request = requests.get(url)
+    print("Memcache get image: "+memcache_imagekey_request.json())
 
-        img_file_path = "saved_images/" + file_name
-        path = Path(img_file_path)
-        im = Image.open(img_file_path)
+
+   
+    
+    #print(image_file)
+    if memcache_imagekey_request.json() == 'Unknown key':
+        #Load image from local system
+        image_file = s3resource.Bucket(S3_bucket_name).Object(file_name).get()
+        im = Image.open(image_file['Body'])
         data = io.BytesIO()
         if im.format is "GIF":
             ims = ImageSequence.all_frames(im)
@@ -99,14 +94,8 @@ def show_image():
             
             im.save(data, im.format)
         encoded_img_data = base64.b64encode(data.getvalue())
-
-
-        #Put Key and image into memcache
-        memcache_updatekey_request = requests.post('http://localhost:5001/cache_image',data={'key': file_name ,'value':encoded_img_data.decode('utf-8')})
+        memcache_updatekey_request = requests.post(active_list[active_list_index][1]+'/cache_image',data={'key': file_name ,'value':encoded_img_data.decode('utf-8')})
         print("Memcache update key value: "+memcache_updatekey_request.text)
-
         return render_template('show_image.html', format=im.format, img_data = encoded_img_data.decode('utf-8'))
-    
     else:
         return render_template('show_image.html', format='', img_data = memcache_imagekey_request.json())
-    """

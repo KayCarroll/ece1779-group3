@@ -14,8 +14,10 @@ s3resource  = boto3.resource('s3',
                     aws_secret_access_key=SECRET_KEY,
                     region_name='us-east-1')
 
+
 from app import main
 from app import upload
 from app import show_image
 from app import key_list
+from app import hashing
 from app import api

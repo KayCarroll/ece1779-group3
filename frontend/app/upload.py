@@ -6,7 +6,7 @@ from pathlib import Path
 import io
 import base64
 import mysql.connector
-from app.config_variables import db_config,S3_bucket_name
+from app.config_variables import *
 import os
 import glob
 
@@ -15,6 +15,8 @@ from plotly.offline import plot
 import plotly.express as px
 import plotly.graph_objs as go
 from flask import Markup
+
+from app.hashing import *
 
 import boto3
 
@@ -60,18 +62,25 @@ def upload_image():
    
     file = request.files['my_image']
  
-    print (file)
-    print(file.content_type)
-    print(file.filename)
-    print(file.mimetype)
-    print(file.name)
+    #print (file)
+    #print(file.content_type)
+   # print(file.filename)
+    #print(file.mimetype)
+    #print(file.name)
 
 
     s3_client.upload_fileobj(file, S3_bucket_name, file_name)
+    
+    update_active_list()
+ 
 
 
     #invalidate memcache key
-   # memcache_invalidate_request = requests.post("http://localhost:5001/invalidate_key", data={'key': file_name })
+    partition_numb=hash_partition(key=file_name)
+
+    active_list_index=route_partition_node(number_active_node=len(active_list),partition_number=partition_numb)
+
+    memcache_invalidate_request = requests.post(active_list[active_list_index][1]+"/invalidate_key", data={'key': file_name })
  
 
     #print("Memcache invaldte: "+memcache_invalidate_request.text)
