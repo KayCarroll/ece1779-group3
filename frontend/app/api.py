@@ -127,12 +127,12 @@ def get_image(key_value):
         # check if key exist in mem cache
         
         update_active_list()
-        partition_numb=hash_partition(key=file_name)
+        partition_numb=hash_partition(key=key_value)
         active_list_index=route_partition_node(number_active_node=len(active_list),partition_number=partition_numb)
         
         
         
-        url=active_list[active_list_index][1]+"/get_image/"+file_name
+        url=active_list[active_list_index][1]+"/get_image/"+key_value
         cache_response = requests.get(url)
         
       
