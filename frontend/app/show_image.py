@@ -17,7 +17,7 @@ import plotly.express as px
 import plotly.graph_objs as go
 from flask import Markup
 from app.hashing import *
-
+import app.config_variables
 import boto3
 
 def connect_to_database():
@@ -45,7 +45,14 @@ def render_show_image():
     # data = io.BytesIO()
     # im.save(data, "JPEG")
     # encoded_img_data = base64.b64encode(data.getvalue())
-    return render_template('show_image.html')
+    popup='0'
+  
+    
+    if app.config_variables.alert=="1":
+        app.config_variables.alert="0"
+        popup='1'
+
+    return render_template('show_image.html',is_alert=popup)
 
 @webapp.route('/show_image', methods=['POST'])
 def show_image():
@@ -70,13 +77,20 @@ def show_image():
     update_active_list()
     partition_numb=hash_partition(key=file_name)
     active_list_index=route_partition_node(number_active_node=len(active_list),partition_number=partition_numb)
+    #print(active_list)
+    #print(app.config_variables.active_list)
     
     
     
     url=active_list[active_list_index][1]+"/get_image/"+file_name
     memcache_imagekey_request = requests.get(url)
     
-
+    popup='0'
+  
+    
+    if app.config_variables.alert=="1":
+        app.config_variables.alert="0"
+        popup='1'
 
    
     
@@ -86,7 +100,7 @@ def show_image():
         image_file = s3resource.Bucket(S3_bucket_name).Object(file_name).get()
         im = Image.open(image_file['Body'])
         data = io.BytesIO()
-        if im.format is "GIF":
+        if im.format == "GIF":
             ims = ImageSequence.all_frames(im)
             for img in ims:
                 ims[0].save(data, format=im.format, save_all=True, append_images=ims[1:])
@@ -95,8 +109,9 @@ def show_image():
             im.save(data, im.format)
         encoded_img_data = base64.b64encode(data.getvalue())
         memcache_updatekey_request = requests.post(active_list[active_list_index][1]+'/cache_image',data={'key': file_name ,'value':encoded_img_data.decode('utf-8')})
+        
         print("Memcache" + str(active_list[active_list_index][0]) + " update key value: "+memcache_updatekey_request.text)
-        return render_template('show_image.html', format=im.format, img_data = encoded_img_data.decode('utf-8'))
+        return render_template('show_image.html', format=im.format, img_data = encoded_img_data.decode('utf-8'),is_alert=popup)
     else:
         print("Memcache" + str(active_list[active_list_index][0])+" get image ")
-        return render_template('show_image.html', format='', img_data = memcache_imagekey_request.json())
+        return render_template('show_image.html', format='', img_data = memcache_imagekey_request.json(),is_alert=popup)

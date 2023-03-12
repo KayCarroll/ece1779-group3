@@ -16,7 +16,7 @@ import plotly.express as px
 import plotly.graph_objs as go
 from flask import Markup
 import boto3
-
+import app.config_variables
 def connect_to_database():
     return mysql.connector.connect(user=db_config['user'],
                                    password=db_config['password'],
@@ -45,6 +45,12 @@ def pool_changes():
     for row in cursor.fetchall():
         if row[1]==1:
             active_count=active_count+1
-    global before_active       
-    return render_template("show_nodes_changes.html",before_active =before_active, current_active=str(active_count) , return_addr='/')
+    
+    popup='0'
+  
+    
+    if app.config_variables.alert=="1":
+        app.config_variables.alert="0"
+        popup='1'        
+    return render_template("show_nodes_changes.html",before_active =app.config_variables.before_active, current_active=str(active_count) , return_addr='/',is_alert=popup)
 

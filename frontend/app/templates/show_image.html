@@ -8,6 +8,12 @@
   <title>Group 3 Assigment 2 Frontend</title>
 </head>
 <body>
+    {% if is_alert =="1"%}
+     <div class="alert alert-warning alert-dismissible">
+       <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+       <strong>Warning!</strong> Pool size changed.
+     </div>
+     {% endif %}
     <div id="global_navbar"></div>
     <form name="submit_form" method="POST" onsubmit="return checkform()">
     <div class="form-group">

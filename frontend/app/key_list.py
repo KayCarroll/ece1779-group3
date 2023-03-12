@@ -16,6 +16,7 @@ import plotly.express as px
 import plotly.graph_objs as go
 from flask import Markup
 import boto3
+import app.config_variables
 
 def connect_to_database():
     return mysql.connector.connect(user=db_config['user'],
@@ -42,7 +43,14 @@ def available_keys():
     cursor= db_con.cursor()
     cursor.execute("SELECT * FROM image_key_table1")
     database_key_list = [row[0] for row in cursor.fetchall()]
-    return render_template("show_keylist.html",list_title='All Available Keys', input_list=database_key_list, return_addr='/')
+    
+    popup='0'
+  
+    
+    if app.config_variables.alert=="1":
+        app.config_variables.alert="0"
+        popup='1'
+    return render_template("show_keylist.html",list_title='All Available Keys', input_list=database_key_list, return_addr='/',is_alert=popup)
 
 @webapp.route('/available_keys',methods=['POST'])
 def key_deletion():

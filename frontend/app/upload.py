@@ -45,8 +45,8 @@ def teardown_db(exception):
 def render_upload_image():
     
     popup='0'
-    print("Inside render_upload_image")
-    print(app.config_variables.alert)
+    #print("Inside render_upload_image")
+    #print(app.config_variables.alert)
     
     if app.config_variables.alert=="1":
         app.config_variables.alert="0"
@@ -84,7 +84,8 @@ def upload_image():
     update_active_list()
  
 
-
+    #print(active_list)
+    #print(app.config_variables.active_list)
     #invalidate memcache key
     partition_numb=hash_partition(key=file_name)
 
@@ -96,6 +97,9 @@ def upload_image():
     print("Memcache" +str(active_list[active_list_index][0]) +" invaldte: "+memcache_invalidate_request.text)
     
     popup='0'
-  
+    if app.config_variables.alert=="1":
+        app.config_variables.alert="0"
+        popup='1'
+
 
     return render_template('message.html', user_message = "Your image has been uploaded successfully!", is_alert=popup,return_addr='/upload_image')

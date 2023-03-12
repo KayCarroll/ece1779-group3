@@ -19,7 +19,7 @@ import plotly.graph_objs as go
 from flask import Markup
 from app.hashing import *
 import boto3
-
+import app.config_variables
 
 def connect_to_database():
     return mysql.connector.connect(user=db_config['user'],
@@ -42,7 +42,13 @@ def teardown_db(exception):
 
 @webapp.route('/')
 def main():
-    return render_template("main.html")
+    popup='0'
+  
+    
+    if app.config_variables.alert=="1":
+        app.config_variables.alert="0"
+        popup='1'
+    return render_template("main.html",is_alert=popup)
 
 @webapp.route('/navbar')
 def global_navbar():
@@ -88,13 +94,12 @@ def node_update():
     """
     
     current_key_in_node = []
-    global before_active 
-    print(before_active)
-    before_active=str(len(active_list))
+
+    app.config_variables.before_active=str(len(app.config_variables.active_list))
     
     for index, uri in active_list:
         memcache_getkeys_request = requests.get(uri+"/get_lru_keys")
-        print("Memcache Get kes: ")
+        print("Memcache Get keys: ")
         print(memcache_getkeys_request.json())
         mecmcache_key_list = memcache_getkeys_request.json()
         current_key_in_node=current_key_in_node+mecmcache_key_list
@@ -110,7 +115,7 @@ def node_update():
         image_file = s3resource.Bucket(S3_bucket_name).Object(file_name).get()
         im = Image.open(image_file['Body'])
         data = io.BytesIO()
-        if im.format is "GIF":
+        if im.format == "GIF":
             ims = ImageSequence.all_frames(im)
             for img in ims:
                 ims[0].save(data, format=im.format, save_all=True, append_images=ims[1:])
@@ -121,10 +126,10 @@ def node_update():
         memcache_updatekey_request = requests.post(active_list[active_list_index][1]+'/cache_image',data={'key': file_name ,'value':encoded_img_data.decode('utf-8')})
         print("Memcache update key value: "+memcache_updatekey_request.text)
 
-    print("End point before ")
-    print(app.config_variables.alert)
+    #print("End point before ")
+   # print(app.config_variables.alert)
     app.config_variables.alert='1'
-    print(app.config_variables.alert)
+    #print(app.config_variables.alert)
     response = webapp.response_class(response=json.dumps('OK'), status=200,
                                      mimetype='application/json')
     return response
