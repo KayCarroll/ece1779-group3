@@ -6,6 +6,7 @@ from pathlib import Path
 import io
 import base64
 import mysql.connector
+import app.config_variables
 from app.config_variables import *
 import os
 import glob
@@ -42,14 +43,15 @@ def teardown_db(exception):
 
 @webapp.route('/upload_image')
 def render_upload_image():
-    global alert
-    popup='0'
-   # print(before_active )
-    print(alert)
     
-    if alert=="1":
-        alert="0"
+    popup='0'
+    print("Inside render_upload_image")
+    print(app.config_variables.alert)
+    
+    if app.config_variables.alert=="1":
+        app.config_variables.alert="0"
         popup='1'
+
     return render_template("upload.html",is_alert=popup)
 
 @webapp.route('/upload_image', methods=['POST'])

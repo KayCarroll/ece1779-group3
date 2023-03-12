@@ -15,6 +15,7 @@ from pathlib import Path
 import io
 import base64
 import mysql.connector
+import app.config_variables
 from app.config_variables import *
 import os
 import glob
@@ -78,7 +79,7 @@ def update_active_list():
         if row[1]==1:
             active_list.append((row[0],row[2]))
         
-    
+    app.config_variables.active_list = active_list
     
     
     

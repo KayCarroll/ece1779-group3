@@ -7,6 +7,7 @@ from pathlib import Path
 import io
 import base64
 import mysql.connector
+import app.config_variables
 from app.config_variables import *
 import os
 import glob
@@ -120,13 +121,10 @@ def node_update():
         memcache_updatekey_request = requests.post(active_list[active_list_index][1]+'/cache_image',data={'key': file_name ,'value':encoded_img_data.decode('utf-8')})
         print("Memcache update key value: "+memcache_updatekey_request.text)
 
-    
-    
-    global alert
     print("End point before ")
-    print(alert)
-    alert='1'
-    print(alert)
+    print(app.config_variables.alert)
+    app.config_variables.alert='1'
+    print(app.config_variables.alert)
     response = webapp.response_class(response=json.dumps('OK'), status=200,
                                      mimetype='application/json')
     return response
