@@ -139,19 +139,15 @@ def get_image(key_value):
         if cache_response.status_code == 200:
             image_str = cache_response.json()
         else:
- 
-            
-            
             #Load image from local system
             image_file = s3resource.Bucket(S3_bucket_name).Object(key_value).get()
             im = Image.open(image_file['Body'])
             data = io.BytesIO()
-            if im.format is "GIF":
+            if im.format == "GIF":
                 ims = ImageSequence.all_frames(im)
                 for img in ims:
                     ims[0].save(data, format=im.format, save_all=True, append_images=ims[1:])
             else:
-                
                 im.save(data, im.format)
             image_str = base64.b64encode(data.getvalue())
 
@@ -159,7 +155,7 @@ def get_image(key_value):
                                            data={'key': key_value ,'value': image_str.decode('utf-8')})
 
         response = webapp.response_class(response=json.dumps({'success': 'true', 'key': key_value,
-                                                              'content': image_str.decode('utf-8')}), status=200)
+                                                              'content': image_str}), status=200)
     except Exception as e:
         response = webapp.response_class(response=json.dumps({'success': 'false',
                                                               'error': {'code': 400, 'message': str(e)}}), status=400)
