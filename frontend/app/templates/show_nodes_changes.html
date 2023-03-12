@@ -5,43 +5,28 @@
   <!-- <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script> -->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-  <title>Group 3 Assigment 2 Frontend</title>
+  <title>Group 3 Assigment 1</title>
 </head>
 <body>
-    {% if is_alert =="1"%}
+
+    {% if alert =="1"%}
      <div class="alert alert-warning alert-dismissible">
        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
        <strong>Warning!</strong> Pool size changed.
      </div>
      {% endif %}
-
     <div id="global_navbar"></div>
-    <form name="submit_form" method="POST" enctype="multipart/form-data" onsubmit="return checkform()">
-    <div class="form-group">
-      <label for="image_name">Enter a key for your image: </label>
-      <input class="form-control" type="text" id="image_name" aria-required="true" name="text"/>
-      <label class="form-label" for="image_file">Upload your image</label>
-      <input type="file" class="form-control" accept="image/*" id="image_file" aria-required="true" name="my_image"/>
-    </div>
-    <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
+    <h1>Previous number of node: {{ before_active }} </h1>
+    <h1>Current number of node: {{ current_active }} </h1>
+
+  
+
+    <a href="{{ return_addr }}" class="btn btn-outline-primary">Go Back</a>
 
     <script>
-    $(function(){
-    $("#global_navbar").load("navbar");
-    });
-
-    function checkform() {
-      if(document.getElementById("image_name").value == "" ) {
-          alert("Please enter Image Key");
-          return false;
-      } else if (document.getElementById("image_file").files.length == 0) {
-        alert("Please choose the file to upload");
-        return false;
-      } else {
-          document.submit_form.submit();
-      }
-    }
+        $(function () {
+            $("#global_navbar").load("navbar");
+        });
     </script>
 
     <!-- <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script> -->

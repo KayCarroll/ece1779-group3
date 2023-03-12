@@ -87,6 +87,9 @@ def node_update():
     """
     
     current_key_in_node = []
+    global before_active 
+    print(before_active)
+    before_active=str(len(active_list))
     
     for index, uri in active_list:
         memcache_getkeys_request = requests.get(uri+"/get_lru_keys")
@@ -119,6 +122,11 @@ def node_update():
 
     
     
+    global alert
+    print("End point before ")
+    print(alert)
+    alert='1'
+    print(alert)
     response = webapp.response_class(response=json.dumps('OK'), status=200,
                                      mimetype='application/json')
     return response

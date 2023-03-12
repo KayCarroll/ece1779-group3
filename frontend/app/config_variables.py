@@ -8,4 +8,7 @@ ACCESS_KEY = "AKIARYPZNG6KRLLMQZ3X"
 SECRET_KEY = "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"
 
 memcache_option = "manual"
-active_list = []  
+active_list = [] 
+before_active = "8" 
+
+alert ='0'
