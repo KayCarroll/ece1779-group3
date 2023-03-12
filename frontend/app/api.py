@@ -42,8 +42,6 @@ def teardown_db(exception):
     if db is not None:
         db.close()
 
-
-S3_bucket_name = 'ece1779samwang-a2'
 @webapp.route('/api/delete_all', methods=['POST'])
 def delete_all():
     try:
@@ -138,6 +136,8 @@ def get_image(key_value):
       
         if cache_response.status_code == 200:
             image_str = cache_response.json()
+            response = webapp.response_class(response=json.dumps({'success': 'true', 'key': key_value,
+                                                              'content': image_str}), status=200)
         else:
             #Load image from local system
             image_file = s3resource.Bucket(S3_bucket_name).Object(key_value).get()
@@ -150,12 +150,13 @@ def get_image(key_value):
             else:
                 im.save(data, im.format)
             image_str = base64.b64encode(data.getvalue())
-
+            print("still alive")
             cache_response = requests.post(active_list[active_list_index][1]+'/cache_image',
                                            data={'key': key_value ,'value': image_str.decode('utf-8')})
+            response = webapp.response_class(response=json.dumps({'success': 'true', 'key': key_value,
+                                                              'content': image_str.decode('utf-8')}), status=200)
 
-        response = webapp.response_class(response=json.dumps({'success': 'true', 'key': key_value,
-                                                              'content': image_str}), status=200)
+        
     except Exception as e:
         response = webapp.response_class(response=json.dumps({'success': 'false',
                                                               'error': {'code': 400, 'message': str(e)}}), status=400)
