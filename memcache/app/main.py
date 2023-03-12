@@ -9,8 +9,9 @@ from app.models import CacheConfig, CacheStatus
 
 LOG_FORMAT = '%(asctime)s - %(name)s - [%(levelname)s] - %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, handlers=[logging.StreamHandler()])
-logging.getLogger('apscheduler').setLevel(logging.WARNING)
-logging.getLogger('botocore').setLevel(logging.WARNING)
+for module_name in ['apscheduler', 'botocore', 'urllib3']:
+    logging.getLogger(module_name).setLevel(logging.WARNING)
+
 
 logger = logging.getLogger(__name__)
 boto_client = boto3.client('cloudwatch', aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -29,6 +30,7 @@ def set_cache_status():
         cache_entry = CacheStatus.query.get(cache.id)
         if cache_entry:
             cache_entry.is_active = cache.is_active
+            cache_entry.base_url = CACHE_BASE_URL
             cache_entry.last_updated = datetime.datetime.utcnow()
         else:
             cache_entry = CacheStatus(id=cache.id, is_active=cache.is_active, base_url=CACHE_BASE_URL)
@@ -39,9 +41,10 @@ def set_cache_status():
 
 def store_memcache_statistics():
     if cache.is_active:
-        metric_data = [{'MetricName': key, 'Dimensions': [{'Name': 'ID', 'Value': str(cache.id)}], 'Value': val} for key, val in cache.get_statistics().items()]
+        cache_stats = cache.get_statistics()
+        metric_data = [{'MetricName': key, 'Dimensions': [{'Name': 'ID', 'Value': str(cache.id)}], 'Value': val} for key, val in cache_stats.items()]
         boto_client.put_metric_data(Namespace=CLOUDWATCH_NAMESPACE, MetricData=metric_data)
-        # logger.info(f'METRICS: {metric_data}')
+        logger.debug(f'Updated MemCache metrics: {cache_stats}')
 
 
 @webapp.route('/get_image/<key>', methods=['GET'])

@@ -84,12 +84,16 @@ class MemCache:
         logger.debug(f'Cache size after removing item(s): {self.current_cache_size}')
 
     def activate(self):
-        # TODO: Add logging and check if any additional logic needed to activate.
+        """Activate the memcache.
+        """
         self.is_active = True
+        logger.info(f'Activated MemCache with id {self.id}')
 
     def deactivate(self):
-        # TODO: Add logging and check if any additional logic needed to deactivate.
+        """Deactivate the memcache.
+        """
         self.is_active = False
+        logger.info(f'Deactivated MemCache with id {self.id}')
 
     def get_keys_ordered_by_lru(self):
         """Get a list of keys currently in the cache ordered from least recently used to most recently used.
