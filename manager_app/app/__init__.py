@@ -27,4 +27,5 @@ from app import memcache_stat
 from app import memcache_config
 from app import tests
 from app import mode_selection
+from app import api
 
