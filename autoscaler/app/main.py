@@ -5,56 +5,62 @@ import requests
 from datetime import datetime, timedelta
 from flask import json, request
 from app import webapp, db, scaler
-from app.constants import CLOUDWATCH_NAMESPACE, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, REGION_NAME
+from app.constants import (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, REGION_NAME,
+                           CLOUDWATCH_NAMESPACE, NOTIFICATION_ENDPOINT_URL)
 from app.autoscaler import ScalingMode
 from app.models import CacheStatus
 
 LOG_FORMAT = '%(asctime)s - %(name)s - [%(levelname)s] - %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, handlers=[logging.StreamHandler()])
-logging.getLogger('apscheduler').setLevel(logging.WARNING)
+for module_name in ['apscheduler', 'botocore', 'urllib3']:
+    logging.getLogger(module_name).setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 boto_client = boto3.client('cloudwatch', aws_access_key_id=AWS_ACCESS_KEY_ID,
                            aws_secret_access_key=AWS_SECRET_ACCESS_KEY, region_name=REGION_NAME)
 
 
+def get_miss_rate_metrics_queries():
+    metrics_queries = []
+    for i in range(8):
+        dimensions = [{'Name': 'ID', 'Value': str(i)}]
+        metric = {'Namespace': CLOUDWATCH_NAMESPACE, 'MetricName': 'miss_rate', 'Dimensions': dimensions}
+
+        metric_query = {'Id': f'miss_rate_metrics_{i}',
+                        'MetricStat': {'Metric': metric, 'Period': 60, 'Stat': 'Average'},
+                        'ReturnData': True}
+        metrics_queries.append(metric_query)
+    return metrics_queries
+
+
 def auto_scale():
     if scaler.mode == ScalingMode.AUTOMATIC:
-        # TODO: Actually implement auto scaling logic
-        metric_data_queries = [{'Id': 'MISS_RATE_METRICS',
-                                'MetricStat': {'Metric': {'Namespace': CLOUDWATCH_NAMESPACE,
-                                                          'MetricName': 'miss_rate'},
-                                               'Period': 5,
-                                               'Stat': 'Average'},
-                                'ReturnData': False}]
+        metric_data_queries = get_miss_rate_metrics_queries()
+
+        start_time = datetime.utcnow() - timedelta(seconds=60)
         end_time = datetime.utcnow()
-        start_time = end_time - timedelta(minutes=1)
-        data_results = boto_client.get_metric_data(MetricDataQueries=metric_data_queries,
-                                                   StartTime=start_time, EndTime=end_time)
+        data_results = boto_client.get_metric_data(MetricDataQueries=metric_data_queries, StartTime=start_time,
+                                                   EndTime=end_time, ScanBy='TimestampAscending')
 
-        # TODO: Figure out if 'values' contains the average miss_rate or a list of all miss_rates
-        values = data_results['MetricDataResults'][0]['Values']
-        # NOTE: For now, assuming values is a list of miss_rates and not teh average but will need to check this later.
-        average_miss_rate = sum(values)/len(values)
+        miss_rates = []
+        for metric in data_results['MetricDataResults']:
+            miss_rates.extend(metric['Values'])
+        logger.debug(f'Cache miss_rates from {start_time} to {end_time} - {miss_rates}')
 
-        if average_miss_rate > scaler.max_miss_rate:
-            # Expand pool
-            active_node_count = get_active_node_count()
-            target_node_count = active_node_count * scaler.expand_ratio
-            for _ in range(target_node_count - active_node_count):
-                node_id = activate_node()
-                if node_id is None:
-                    logger.info('No more available inactive nodes to be activated')
-                    break
-        elif average_miss_rate < scaler.min_miss_rate:
-            # Shrink pool
-            active_node_count = get_active_node_count()
-            target_node_count = active_node_count * scaler.shrink_ratio
-            for _ in range(active_node_count - target_node_count):
-                node_id = deactivate_node()
-                if node_id is None:
-                    logger.info('No more available active nodes to be deactivated')
-                    break
+        active_node_count = get_active_node_count()
+        target_node_count = scaler.get_target_node_count(miss_rates, active_node_count)
+
+        nodes_updated = []
+        node_count_delta = target_node_count - active_node_count
+        for _ in range(abs(node_count_delta)):
+            node_id = activate_node() if node_count_delta > 0 else deactivate_node()
+            if node_id is None:
+                logger.info('No more available nodes to activate/deactivate during scaling.')
+                break
+            nodes_updated.append(node_id)
+
+        if nodes_updated:
+            send_pool_change_notification()
 
 
 def get_active_node_count():
@@ -90,6 +96,11 @@ def deactivate_node():
             return None
 
 
+def send_pool_change_notification():
+    response = request.post(NOTIFICATION_ENDPOINT_URL)
+    logger.debug(f'Notified frontend of memcache pool size change. Response code: {response.status_code}')
+
+
 @webapp.route('/automatic', methods=['POST'])
 def enable_automatic_mode():
     scaler.set_mode(ScalingMode.AUTOMATIC)
@@ -121,6 +132,7 @@ def increase_pool_size():
             response = webapp.response_class(response=json.dumps('No available inactive nodes to be activated'),
                                              status=404, mimetype='application/json')
         else:
+            send_pool_change_notification()
             response = webapp.response_class(response=json.dumps('OK'), status=200,
                                              mimetype='application/json')
     else:
@@ -137,6 +149,7 @@ def decrease_pool_size():
             response = webapp.response_class(response=json.dumps('No available active nodes to be deactivated'),
                                              status=404, mimetype='application/json')
         else:
+            send_pool_change_notification()
             response = webapp.response_class(response=json.dumps('OK'), status=200,
                                              mimetype='application/json')
     else:
