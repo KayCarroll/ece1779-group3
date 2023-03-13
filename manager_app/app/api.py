@@ -185,7 +185,7 @@ def cache_configuration():
     response = webapp.response_class(response=json.dumps({'success': 'true',
                                                           'mode': mode,
                                                           'numNodes': numNodes,
-                                                          'cacheSize': capacity,
+                                                          'cacheSize': int(capacity),
                                                           'policy': replacement_policy}), status=200)
     return response
 
