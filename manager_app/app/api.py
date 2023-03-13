@@ -126,14 +126,20 @@ def return_num_active_nodes():
 def cache_configuration():
     mode = request.args.get("mode")
     numNodes = request.args.get("numNodes")
-    if numNodes:
-        numNodes = int(numNodes)
     capacity = request.args.get("cacheSize")
     replacement_policy = request.args.get("policy")
     expRatio = request.args.get("expRatio")
     shrinkRatio = request.args.get("shrinkRatio")
     maxMiss = request.args.get("maxMiss")
     minMiss = request.args.get("minMiss")
+    if numNodes:
+        numNodes = int(numNodes)
+    else:
+        numNodes = None
+    if capacity:
+        expRatio = int(capacity)
+    else:
+        capacity = None
     if expRatio:
         expRatio = float(expRatio)
     else:
@@ -179,7 +185,7 @@ def cache_configuration():
     response = webapp.response_class(response=json.dumps({'success': 'true',
                                                           'mode': mode,
                                                           'numNodes': numNodes,
-                                                          'cacheSize': int(capacity),
+                                                          'cacheSize': capacity,
                                                           'policy': replacement_policy}), status=200)
     return response
 
