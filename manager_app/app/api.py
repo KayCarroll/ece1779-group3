@@ -137,7 +137,7 @@ def cache_configuration():
     else:
         numNodes = None
     if capacity:
-        expRatio = int(capacity)
+        capacity = int(capacity)
     else:
         capacity = None
     if expRatio:
