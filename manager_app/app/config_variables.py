@@ -8,7 +8,7 @@ ACCESS_KEY = "AKIARYPZNG6KRLLMQZ3X"
 SECRET_KEY = "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"
 
 memcache_option = "manual"
-frontend_base_url = "http://127.0.0.1:4999"
+frontend_base_url = "http://127.0.0.1:5000"
 manager_base_url = "http://127.0.0.1:5001"
 auto_scaler_base_url = "http://127.0.0.1:5002"
 
