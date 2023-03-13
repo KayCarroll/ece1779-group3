@@ -52,5 +52,5 @@ def pool_changes():
     if app.config_variables.alert=="1":
         app.config_variables.alert="0"
         popup='1'        
-    return render_template("show_nodes_changes.html",before_active =app.config_variables.before_active, current_active=str(active_count) , return_addr='/',is_alert=popup)
+    return render_template("show_nodes_changes.html", current_active=str(active_count) , return_addr='/',is_alert=popup)
 

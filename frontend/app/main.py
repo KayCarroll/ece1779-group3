@@ -95,7 +95,7 @@ def node_update():
     
     current_key_in_node = []
 
-    app.config_variables.before_active=str(len(app.config_variables.active_list))
+   
     
     for index, uri in active_list:
         memcache_getkeys_request = requests.get(uri+"/get_lru_keys")
