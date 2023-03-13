@@ -1,0 +1,7 @@
+10 Request Total: 8.624133
+30 Request Total: 22.811435
+50 Request Total: 38.85761899999999
+70 Request Total: 52.583719999999985
+90 Request Total: 60.624367000000014
+110 Request Total: 82.85174000000002
+130 Request Total: 93.36945000000003
